@@ -44,7 +44,6 @@ CVS
 # Log files
 ######################
 *.log
-*.txt
 
 ######################
 # Project files

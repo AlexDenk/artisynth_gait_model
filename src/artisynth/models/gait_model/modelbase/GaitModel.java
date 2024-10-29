@@ -1,4 +1,4 @@
-package artisynth.models.diss.Tests;
+package artisynth.models.gait_model.Tests;
 
 import java.awt.Color;
 import java.io.BufferedReader;
@@ -65,13 +65,12 @@ import artisynth.core.probes.VelocityInputProbe;
 import artisynth.core.renderables.ColorBar;
 import artisynth.core.util.ArtisynthPath;
 import artisynth.core.workspace.RootModel;
-import artisynth.models.diss.ContactMonitor;
-import artisynth.models.diss.CoordinateData;
-import artisynth.models.diss.CustomTRCReader;
-import artisynth.models.diss.ForceData;
-import artisynth.models.diss.MOTReader;
-import artisynth.models.diss.MarkerMapping;
-import artisynth.models.diss.MotionTargetController;
+import artisynth.models.gait_model.ContactMonitor;
+import artisynth.models.gait_model.CoordinateData;
+import artisynth.models.gait_model.CustomTRCReader;
+import artisynth.models.gait_model.ForceData;
+import artisynth.models.gait_model.MOTReader;
+import artisynth.models.gait_model.MarkerMapping;
 import maspack.geometry.Face;
 import maspack.geometry.PolygonalMesh;
 import maspack.geometry.Vertex3d;
@@ -103,7 +102,7 @@ import maspack.util.PathFinder;
  * alexander.denk@uni-due.de
  */
 
-public class OpenSimTest extends RootModel {
+public class GaitModel extends RootModel {
    // ----------------------------Instance Fields-------------------------------
    // All rigid bodies in the model
    RenderableComponentList<RigidBody> myBodies = null;
@@ -156,7 +155,7 @@ public class OpenSimTest extends RootModel {
          this.msgName = myName + "/Output/" + myName + "_message_file.txt";
          this.msgPath =
             ArtisynthPath
-               .getSrcRelativePath (OpenSimTest.class, msgName).toString ();
+               .getSrcRelativePath (GaitModel.class, msgName).toString ();
          try {
             writer = new PrintWriter (new FileWriter (msgPath, true));
          }
@@ -231,10 +230,10 @@ public class OpenSimTest extends RootModel {
    }
 
    // -----------------------------Constructors---------------------------------
-   public OpenSimTest () {
+   public GaitModel () {
    }
 
-   public OpenSimTest (String name) throws IOException {
+   public GaitModel (String name) throws IOException {
       super (name);
    }
 
@@ -574,10 +573,9 @@ public class OpenSimTest extends RootModel {
     * @param controller
     * {@link TrackingController}
     */
-   private void addExcitersToController (
-      TrackingController controller) {
+   private void addExcitersToController (TrackingController controller) {
       // Muscles
-      //controller.addExciters (myMuscles);
+      // controller.addExciters (myMuscles);
       // Frame Exciters
       myBodies.forEach (body -> {
          if (body.getMass () == 0)
@@ -593,7 +591,7 @@ public class OpenSimTest extends RootModel {
                scale[0] = 0.3;
                scale[1] = 1;
                scale[2] = 0.3;
-               scale[3] = 1;   
+               scale[3] = 1;
                scale[4] = 1;
                scale[5] = 1;
                break;
@@ -731,6 +729,8 @@ public class OpenSimTest extends RootModel {
     */
    private void addNumOutputProbesAndPanel (
       MarkerMotionData motion, TrackingController controller) {
+      if (motion == null)
+         return;
       double start = motion.getFrameTime (0);
       double stop = motion.getFrameTime (motion.numFrames () - 1);
       double step = getMaxStepSize ();
@@ -758,7 +758,7 @@ public class OpenSimTest extends RootModel {
     * weights
     * @param motion
     * experimental marker motion data
-    * @throws IOException 
+    * @throws IOException
     */
    private void addPointTargetsAndProbes (
       TrackingController controller, MarkerMapping map, MarkerMotionData motion)
@@ -771,18 +771,19 @@ public class OpenSimTest extends RootModel {
       for (int i = 0; i < myMarkers.size (); i++) {
          FrameMarker mkr = myMarkers.get (i);
          String markerName = mkr.getName ();
-         if (map.getExpLabelFromModel (markerName) != null) {
+         String expName = map.getExpLabelFromModel (markerName);
+         if (expName != null) {
             Double weight = map.getMarkerWeight (markerName);
             weights.append (weight);
             targets.add (mkr);
             TargetPoint target = controller.addPointTarget (mkr, weight);
-            // adjust initial position of each target
+            // Adjust initial position of each target
             Point3d position =
-               (Point3d)motion.getMarkerPosition (0, markerName);
+               (Point3d)motion.getMarkerPosition (0, expName);
             target.setPosition (position);
          }
       }
-            
+
       // Generate inverse kinematics probes from positions
       String ikProbeName = "IK model markers";
       double end = motion.getFrameTime (motion.numFrames () - 1);
@@ -791,8 +792,9 @@ public class OpenSimTest extends RootModel {
       VectorNd positions = new VectorNd (3 * targets.size ());
       for (int i = 0; i < motion.numFrames (); i++) {
          for (int j = 0; j < targets.size (); j++) {
-            Vector3d pos =
-               motion.getMarkerPosition (i, targets.get (j).getName ());
+            String expName =
+               map.getExpLabelFromModel (targets.get (j).getName ());
+            Vector3d pos = motion.getMarkerPosition (i, expName);
             positions.set (3 * j, pos.x);
             positions.set (3 * j + 1, pos.y);
             positions.set (3 * j + 2, pos.z);
@@ -802,37 +804,38 @@ public class OpenSimTest extends RootModel {
       }
       addInputProbe (ikProbe);
       ikProbe.setBodiesNonDynamicIfActive (true);
-      
+
       // Generate PositionInputProbes from IKSolver
-      //String posProbeName = "IK target positions";
-      //double step = getMaxStepSize ();
-      //IKSolver solver = ikProbe.getSolver ();
-      //PositionInputProbe posProbe =
-      //   solver.createMarkerPositionProbe (posProbeName, ikProbe, step);
-      //posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
-      //addInputProbe (posProbe);
-      
+      // String posProbeName = "IK target positions";
+      // double step = getMaxStepSize ();
+      // IKSolver solver = ikProbe.getSolver ();
+      // PositionInputProbe posProbe =
+      // solver.createMarkerPositionProbe (posProbeName, ikProbe, step);
+      // posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
+      // addInputProbe (posProbe);
+
       // Generate PositionInputProbes from scratch
-      //PositionInputProbe posProbe =
-      //new PositionInputProbe (
-      //   posProbeName, targets, RotationRep.ZYX, 0.0, end);
+      // PositionInputProbe posProbe =
+      // new PositionInputProbe (
+      // posProbeName, targets, RotationRep.ZYX, 0.0, end);
       for (int i = 0; i < motion.numFrames (); i++) {
          for (int j = 0; j < targets.size (); j++) {
-            Vector3d pos =
-               motion.getMarkerPosition (i, targets.get (j).getName ());
+            String expName =
+               map.getExpLabelFromModel (targets.get (j).getName ());
+            Vector3d pos = motion.getMarkerPosition (i, expName);
             positions.set (3 * j, pos.x);
             positions.set (3 * j + 1, pos.y);
             positions.set (3 * j + 2, pos.z);
          }
          double time = motion.getFrameTime (i);
-      //   posProbe.addData (time, positions);
+         // posProbe.addData (time, positions);
       }
-      //posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
-      //addInputProbe (posProbe);
-      //VelocityInputProbe velProbe =
-      //   VelocityInputProbe
-      //      .createInterpolated ("IK target velocities", posProbe, step);
-      //addInputProbe (velProbe);
+      // posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
+      // addInputProbe (posProbe);
+      // VelocityInputProbe velProbe =
+      // VelocityInputProbe
+      // .createInterpolated ("IK target velocities", posProbe, step);
+      // addInputProbe (velProbe);
    }
 
    /**
