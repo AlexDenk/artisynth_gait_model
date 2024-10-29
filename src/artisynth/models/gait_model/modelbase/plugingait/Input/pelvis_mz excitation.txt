@@ -1,2 +1,0 @@
-0.0 2.5 1.0
-Linear 1 explicit
