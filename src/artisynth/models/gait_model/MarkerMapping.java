@@ -1,4 +1,4 @@
-package artisynth.models.diss;
+package artisynth.models.gait_model;
 
 import java.util.ArrayList;
 
