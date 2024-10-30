@@ -806,36 +806,18 @@ public class GaitModel extends RootModel {
       ikProbe.setBodiesNonDynamicIfActive (true);
 
       // Generate PositionInputProbes from IKSolver
-      // String posProbeName = "IK target positions";
-      // double step = getMaxStepSize ();
-      // IKSolver solver = ikProbe.getSolver ();
-      // PositionInputProbe posProbe =
-      // solver.createMarkerPositionProbe (posProbeName, ikProbe, step);
-      // posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
-      // addInputProbe (posProbe);
+      String posProbeName = "IK target positions";
+      double step = getMaxStepSize ();
+      IKSolver solver = ikProbe.getSolver ();
+      PositionInputProbe posProbe =
+         solver.createMarkerPositionProbe (posProbeName, ikProbe, step);
+      posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
+      addInputProbe (posProbe);
 
-      // Generate PositionInputProbes from scratch
-      // PositionInputProbe posProbe =
-      // new PositionInputProbe (
-      // posProbeName, targets, RotationRep.ZYX, 0.0, end);
-      for (int i = 0; i < motion.numFrames (); i++) {
-         for (int j = 0; j < targets.size (); j++) {
-            String expName =
-               map.getExpLabelFromModel (targets.get (j).getName ());
-            Vector3d pos = motion.getMarkerPosition (i, expName);
-            positions.set (3 * j, pos.x);
-            positions.set (3 * j + 1, pos.y);
-            positions.set (3 * j + 2, pos.z);
-         }
-         double time = motion.getFrameTime (i);
-         // posProbe.addData (time, positions);
-      }
-      // posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
-      // addInputProbe (posProbe);
-      // VelocityInputProbe velProbe =
-      // VelocityInputProbe
-      // .createInterpolated ("IK target velocities", posProbe, step);
-      // addInputProbe (velProbe);
+      VelocityInputProbe velProbe =
+         VelocityInputProbe
+            .createInterpolated ("IK target velocities", posProbe, step);
+      addInputProbe (velProbe);
    }
 
    /**
