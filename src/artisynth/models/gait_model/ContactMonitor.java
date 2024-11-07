@@ -83,35 +83,26 @@ public class ContactMonitor extends MonitorBase {
       contacts.append ("COLLISION INTERFACE: " + cr.getName () + "\n");
       if (cr.inContact ()) {
          List<ContactData> cdata = cr.getContactData ();
+         contacts.append ("FOUND " + cdata.size () + " CONTACT EVENTS." + "\n");
          if (cdata.size () == 0)
-            contacts.append ("NO CONTACT DETECTED." + "\n\n");
-         else {
-            contacts
-               .append ("FOUND " + cdata.size () + " CONTACT EVENTS." + "\n");
-            cdata.forEach (cd -> {
-               String row =
-                  String
-                     .format (
-                        "%-20s%-6s", "POSITION",
-                        cd.getPosition0 ().toString ("%.3f"));
-               contacts.append (row + "\n");
-               row =
-                  String
-                     .format (
-                        "%-20s%-6s", "CONTACT FORCE (N)",
-                        cd.getContactForce ().toString ("%.3f"));
-               contacts.append (row + "\n");
-               row =
-                  String
-                     .format (
-                        "%-20s%-6s", "FRICTION FORCE (N)",
-                        cd.getFrictionForce ().toString ("%.3f"));
-               contacts.append (row + "\n\n");
-            });
-         }
+            return contacts.toString ();
+         cdata.forEach (cd -> {
+            String row = String.format ("%-20s%-6s", "POSITION",
+                     cd.getPosition0 ().toString ("%.3f"));
+            contacts.append (row + "\n");
+            row = String.format ("%-20s%-6s", "CONTACT FORCE (N)",
+                     cd.getContactForce ().toString ("%.3f"));
+            contacts.append (row + "\n");
+            row = String.format ("%-20s%-6s", "FRICTION FORCE (N)",
+                     cd.getFrictionForce ().toString ("%.3f"));
+            contacts.append (row + "\n\n");
+         });
+      }
+      else {
+         contacts.append ("NO CONTACT DETECTED." + "\n\n");
       }
       return contacts.toString ();
-   } 
+   }
 
    /**
     * Writes contact data to file.
