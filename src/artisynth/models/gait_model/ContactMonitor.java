@@ -16,11 +16,16 @@ import artisynth.models.gait_model.Tests.GaitModel;
 /**
  * The contact monitor acts as a monitor (see artisynth manual for further
  * details), to supervise contact events during simulation. Contact is monitored
- * per joint with the contact parameters written to a *_message_file.txt in the
- * current working directory.
+ * per joint with the contact parameters written to a
+ * {@code*_message_file.txt} in the current working directory.
+ * <p>
  * 
- * @author Alexander Denk Copyright (c) 2023, by the Author: Alexander Denk
- * (UDE) University of Duisburg-Essen Chair of Mechanics and Robotics
+ * @author Alexander Denk Copyright (c) 2024
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
  * alexander.denk@uni-due.de
  */
 
@@ -36,23 +41,34 @@ public class ContactMonitor extends MonitorBase {
    boolean isActive;
    // A list of all available collision pairs
    List<CollisionResponse> collResp = new ArrayList<CollisionResponse> ();
-   // A list of all collision pairs, that are actively monitored
-   List<CollisionResponse> activeResp = new ArrayList<CollisionResponse> ();
-   // Checks if all available collision pairs are actively monitored
-   boolean useFullReport;
    // ----------------------------Nested Classes ------------------------------
 
    // -----------------------------Constructors--------------------------------
+   /**
+    * Generates a contact monitor object, that monitors the collision responses
+    * listed in {@code resp} and writes those contact events to a file
+    * corresponding to the current working directory.
+    * <p>
+    * Example: For a model residing in some folder {@code C:\...\sim1}, the
+    * ContactMonitor will write the contact events to
+    * {@code C:\...\sim1\Output\sim1_message.txt}.
+    * 
+    * @param resp
+    * collision response list
+    * @param name
+    * working directory identifier
+    * @throws IOException
+    */
    public ContactMonitor (CollisionResponseList resp, String name)
    throws IOException {
       super ();
       initializeWriter (name);
       // Add each item in the CollisionResponseList to a separate list, since
-      // there are iteration problems with the CollisionResponseList class
+      // there seem to be iteration problems with the CollisionResponseList
+      // class
       resp.forEach (r -> {
          collResp.add (r);
       });
-
    }
 
    // ----------------------------Instance Methods-----------------------------
@@ -60,102 +76,61 @@ public class ContactMonitor extends MonitorBase {
    public void initialize (double t0) {
       super.initialize (t0);
       // Close writer, if it was priorly active
-      if (isActive) {
+      if (isActive)
          writer.close ();
-      }
       isActive = true;
-      // Check for the report mode
-      if (!useFullReport) {
-         // Search for all responses regarding toes and calcanei
-         collResp.forEach (cr -> {
-            if (cr.getName ().contains ("ground")
-            && cr.getName ().contains ("toes")) {
-               activeResp.add (cr);
-            }
-            else if (cr.getName ().contains ("ground")
-            && cr.getName ().contains ("calcn")) {
-               activeResp.add (cr);
-            }
-         });
-      }
-      else {
-         activeResp = collResp;
-      }
    }
 
    public void apply (double t0, double t1) {
-      // TODO: get the actual penetration depth of each contact event.
       writeContactToFile (t0);
-   }
-
-   /**
-    * Queries whether full report mode is used by this {@link ContactMonitor}
-    * 
-    * @return
-    */
-   public boolean useFullReport () {
-      return useFullReport;
-   }
-
-   /**
-    * Enables full report if set to true. If full report is desired, then the
-    * contact info of all collision behaviors is written to file. If unused,
-    * only the ground contact will be written to file.
-    * 
-    * @param b
-    */
-   public void setUseFullReport (boolean b) {
-      useFullReport = b;
    }
 
    /**
     * Writes the generated messages to file.
     * 
     * @param t0
+    * current time
     */
    private void writeContactToFile (double t0) {
       StringBuilder contactEvents = new StringBuilder ();
       contactEvents
          .append (
-            System.lineSeparator () + "DETECT CONTACT EVENTS"
-            + System.lineSeparator ());
-      activeResp.forEach (cr -> {
+            "----------------------------- TIME " + t0
+            + "-----------------------------\n\n")
+         .append ("DETECT CONTACT EVENTS" + "\n\n");
+      collResp.forEach (cr -> {
          contactEvents
-            .append (
-               System.lineSeparator () + "COLLISION INTERFACE: " + cr.getName ()
-               + System.lineSeparator ());
+            .append ("COLLISION INTERFACE: " + cr.getName () + "\n");
          if (cr.inContact ()) {
             List<ContactData> cdata = cr.getContactData ();
             if (cdata.size () > 0) {
                contactEvents
                   .append (
-                     "FOUND " + cdata.size () + " CONTACT EVENTS."
-                     + System.lineSeparator ());
+                     "FOUND " + cdata.size () + " CONTACT EVENTS." + "\n");
                cdata.forEach (cd -> {
                   String row =
                      String
                         .format (
                            "%-20s%-6s", "POSITION",
                            cd.getPosition0 ().toString ("%.3f"));
-                  contactEvents.append (row + System.lineSeparator ());
+                  contactEvents.append (row + "\n");
                   row =
                      String
                         .format (
                            "%-20s%-6s", "CONTACT FORCE (N)",
                            cd.getContactForce ().toString ("%.3f"));
-                  contactEvents.append (row + System.lineSeparator ());
+                  contactEvents.append (row + "\n");
                   row =
                      String
                         .format (
                            "%-20s%-6s", "FRICTION FORCE (N)",
                            cd.getFrictionForce ().toString ("%.3f"));
-                  contactEvents.append (row + System.lineSeparator ());
+                  contactEvents.append (row + "\n\n");
                });
             }
          }
          else {
-            contactEvents
-               .append ("NO CONTACT DETECTED." + System.lineSeparator ());
+            contactEvents.append ("NO CONTACT DETECTED." + "\n\n");
          }
       });
       writer.print (contactEvents.toString ());
