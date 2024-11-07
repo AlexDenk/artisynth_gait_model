@@ -16,8 +16,7 @@ import artisynth.models.gait_model.Tests.GaitModel;
 /**
  * The contact monitor acts as a monitor (see artisynth manual for further
  * details), to supervise contact events during simulation. Contact is monitored
- * per joint with the contact parameters written to a
- * {@code*_message_file.txt} in the current working directory.
+ * per collision response with the contact parameters written to file.
  * <p>
  * 
  * @author Alexander Denk Copyright (c) 2024
@@ -31,8 +30,6 @@ import artisynth.models.gait_model.Tests.GaitModel;
 
 public class ContactMonitor extends MonitorBase {
    // ----------------------------Instance Fields------------------------------
-   // Name of the file, where the contact history is written to
-   String msgName = null;
    // Path to the file, where the contact history is written to
    String msgPath = null;
    // Writer object, that writes data to file
@@ -46,23 +43,19 @@ public class ContactMonitor extends MonitorBase {
    // -----------------------------Constructors--------------------------------
    /**
     * Generates a contact monitor object, that monitors the collision responses
-    * listed in {@code resp} and writes those contact events to a file
-    * corresponding to the current working directory.
-    * <p>
-    * Example: For a model residing in some folder {@code C:\...\sim1}, the
-    * ContactMonitor will write the contact events to
-    * {@code C:\...\sim1\Output\sim1_message.txt}.
+    * listed in {@code resp} and writes those contact events to a file located
+    * at {@code filepath}.
     * 
     * @param resp
     * collision response list
-    * @param name
-    * working directory identifier
+    * @param filepath
+    * path to the file
     * @throws IOException
     */
-   public ContactMonitor (CollisionResponseList resp, String name)
+   public ContactMonitor (CollisionResponseList resp, String filepath)
    throws IOException {
       super ();
-      initializeWriter (name);
+      initializeWriter (filepath);
       // Add each item in the CollisionResponseList to a separate list, since
       // there seem to be iteration problems with the CollisionResponseList
       // class
@@ -85,8 +78,43 @@ public class ContactMonitor extends MonitorBase {
       writeContactToFile (t0);
    }
 
+   private String collectContactEvents (CollisionResponse cr) {
+      StringBuilder contacts = new StringBuilder ();
+      contacts.append ("COLLISION INTERFACE: " + cr.getName () + "\n");
+      if (cr.inContact ()) {
+         List<ContactData> cdata = cr.getContactData ();
+         if (cdata.size () == 0)
+            contacts.append ("NO CONTACT DETECTED." + "\n\n");
+         else {
+            contacts
+               .append ("FOUND " + cdata.size () + " CONTACT EVENTS." + "\n");
+            cdata.forEach (cd -> {
+               String row =
+                  String
+                     .format (
+                        "%-20s%-6s", "POSITION",
+                        cd.getPosition0 ().toString ("%.3f"));
+               contacts.append (row + "\n");
+               row =
+                  String
+                     .format (
+                        "%-20s%-6s", "CONTACT FORCE (N)",
+                        cd.getContactForce ().toString ("%.3f"));
+               contacts.append (row + "\n");
+               row =
+                  String
+                     .format (
+                        "%-20s%-6s", "FRICTION FORCE (N)",
+                        cd.getFrictionForce ().toString ("%.3f"));
+               contacts.append (row + "\n\n");
+            });
+         }
+      }
+      return contacts.toString ();
+   } 
+
    /**
-    * Writes the generated messages to file.
+    * Writes contact data to file.
     * 
     * @param t0
     * current time
@@ -99,39 +127,7 @@ public class ContactMonitor extends MonitorBase {
             + "-----------------------------\n\n")
          .append ("DETECT CONTACT EVENTS" + "\n\n");
       collResp.forEach (cr -> {
-         contactEvents
-            .append ("COLLISION INTERFACE: " + cr.getName () + "\n");
-         if (cr.inContact ()) {
-            List<ContactData> cdata = cr.getContactData ();
-            if (cdata.size () > 0) {
-               contactEvents
-                  .append (
-                     "FOUND " + cdata.size () + " CONTACT EVENTS." + "\n");
-               cdata.forEach (cd -> {
-                  String row =
-                     String
-                        .format (
-                           "%-20s%-6s", "POSITION",
-                           cd.getPosition0 ().toString ("%.3f"));
-                  contactEvents.append (row + "\n");
-                  row =
-                     String
-                        .format (
-                           "%-20s%-6s", "CONTACT FORCE (N)",
-                           cd.getContactForce ().toString ("%.3f"));
-                  contactEvents.append (row + "\n");
-                  row =
-                     String
-                        .format (
-                           "%-20s%-6s", "FRICTION FORCE (N)",
-                           cd.getFrictionForce ().toString ("%.3f"));
-                  contactEvents.append (row + "\n\n");
-               });
-            }
-         }
-         else {
-            contactEvents.append ("NO CONTACT DETECTED." + "\n\n");
-         }
+         contactEvents.append (collectContactEvents (cr));
       });
       writer.print (contactEvents.toString ());
       writer.flush ();
@@ -145,11 +141,8 @@ public class ContactMonitor extends MonitorBase {
     * Name specifier for the current working directory
     * @throws IOException
     */
-   private void initializeWriter (String name) throws IOException {
-      this.msgName = name + "/Output/" + name + "_message_file.txt";
-      this.msgPath =
-         ArtisynthPath
-            .getSrcRelativePath (GaitModel.class, msgName).toString ();
+   private void initializeWriter (String filepath) throws IOException {
+      this.msgPath = filepath;
       writer = new PrintWriter (new FileWriter (msgPath, false));
       this.isActive = false;
    }
