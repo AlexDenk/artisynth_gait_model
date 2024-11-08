@@ -16,18 +16,20 @@ import artisynth.models.gait_model.Tests.GaitModel;
 /**
  * The contact monitor acts as a monitor (see artisynth manual for further
  * details), to supervise contact events during simulation. Contact is monitored
- * per joint with the contact parameters written to a *_message_file.txt in the
- * current working directory.
+ * per collision response with the contact parameters written to file.
+ * <p>
  * 
- * @author Alexander Denk Copyright (c) 2023, by the Author: Alexander Denk
- * (UDE) University of Duisburg-Essen Chair of Mechanics and Robotics
+ * @author Alexander Denk Copyright (c) 2024
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
  * alexander.denk@uni-due.de
  */
 
 public class ContactMonitor extends MonitorBase {
    // ----------------------------Instance Fields------------------------------
-   // Name of the file, where the contact history is written to
-   String msgName = null;
    // Path to the file, where the contact history is written to
    String msgPath = null;
    // Writer object, that writes data to file
@@ -36,23 +38,30 @@ public class ContactMonitor extends MonitorBase {
    boolean isActive;
    // A list of all available collision pairs
    List<CollisionResponse> collResp = new ArrayList<CollisionResponse> ();
-   // A list of all collision pairs, that are actively monitored
-   List<CollisionResponse> activeResp = new ArrayList<CollisionResponse> ();
-   // Checks if all available collision pairs are actively monitored
-   boolean useFullReport;
    // ----------------------------Nested Classes ------------------------------
 
    // -----------------------------Constructors--------------------------------
-   public ContactMonitor (CollisionResponseList resp, String name)
+   /**
+    * Generates a contact monitor object, that monitors the collision responses
+    * listed in {@code resp} and writes those contact events to a file located
+    * at {@code filepath}.
+    * 
+    * @param resp
+    * collision response list
+    * @param filepath
+    * path to the file
+    * @throws IOException
+    */
+   public ContactMonitor (CollisionResponseList resp, String filepath)
    throws IOException {
       super ();
-      initializeWriter (name);
+      initializeWriter (filepath);
       // Add each item in the CollisionResponseList to a separate list, since
-      // there are iteration problems with the CollisionResponseList class
+      // there seem to be iteration problems with the CollisionResponseList
+      // class
       resp.forEach (r -> {
          collResp.add (r);
       });
-
    }
 
    // ----------------------------Instance Methods-----------------------------
@@ -60,103 +69,56 @@ public class ContactMonitor extends MonitorBase {
    public void initialize (double t0) {
       super.initialize (t0);
       // Close writer, if it was priorly active
-      if (isActive) {
+      if (isActive)
          writer.close ();
-      }
       isActive = true;
-      // Check for the report mode
-      if (!useFullReport) {
-         // Search for all responses regarding toes and calcanei
-         collResp.forEach (cr -> {
-            if (cr.getName ().contains ("ground")
-            && cr.getName ().contains ("toes")) {
-               activeResp.add (cr);
-            }
-            else if (cr.getName ().contains ("ground")
-            && cr.getName ().contains ("calcn")) {
-               activeResp.add (cr);
-            }
-         });
-      }
-      else {
-         activeResp = collResp;
-      }
    }
 
    public void apply (double t0, double t1) {
-      // TODO: get the actual penetration depth of each contact event.
       writeContactToFile (t0);
    }
 
-   /**
-    * Queries whether full report mode is used by this {@link ContactMonitor}
-    * 
-    * @return
-    */
-   public boolean useFullReport () {
-      return useFullReport;
+   private String collectContactEvents (CollisionResponse cr) {
+      StringBuilder contacts = new StringBuilder ();
+      contacts.append ("COLLISION INTERFACE: " + cr.getName () + "\n");
+      if (cr.inContact ()) {
+         List<ContactData> cdata = cr.getContactData ();
+         contacts.append ("FOUND " + cdata.size () + " CONTACT EVENTS." + "\n");
+         if (cdata.size () == 0)
+            return contacts.toString ();
+         cdata.forEach (cd -> {
+            String row = String.format ("%-20s%-6s", "POSITION",
+                     cd.getPosition0 ().toString ("%.3f"));
+            contacts.append (row + "\n");
+            row = String.format ("%-20s%-6s", "CONTACT FORCE (N)",
+                     cd.getContactForce ().toString ("%.3f"));
+            contacts.append (row + "\n");
+            row = String.format ("%-20s%-6s", "FRICTION FORCE (N)",
+                     cd.getFrictionForce ().toString ("%.3f"));
+            contacts.append (row + "\n\n");
+         });
+      }
+      else {
+         contacts.append ("NO CONTACT DETECTED." + "\n\n");
+      }
+      return contacts.toString ();
    }
 
    /**
-    * Enables full report if set to true. If full report is desired, then the
-    * contact info of all collision behaviors is written to file. If unused,
-    * only the ground contact will be written to file.
-    * 
-    * @param b
-    */
-   public void setUseFullReport (boolean b) {
-      useFullReport = b;
-   }
-
-   /**
-    * Writes the generated messages to file.
+    * Writes contact data to file.
     * 
     * @param t0
+    * current time
     */
    private void writeContactToFile (double t0) {
       StringBuilder contactEvents = new StringBuilder ();
       contactEvents
          .append (
-            System.lineSeparator () + "DETECT CONTACT EVENTS"
-            + System.lineSeparator ());
-      activeResp.forEach (cr -> {
-         contactEvents
-            .append (
-               System.lineSeparator () + "COLLISION INTERFACE: " + cr.getName ()
-               + System.lineSeparator ());
-         if (cr.inContact ()) {
-            List<ContactData> cdata = cr.getContactData ();
-            if (cdata.size () > 0) {
-               contactEvents
-                  .append (
-                     "FOUND " + cdata.size () + " CONTACT EVENTS."
-                     + System.lineSeparator ());
-               cdata.forEach (cd -> {
-                  String row =
-                     String
-                        .format (
-                           "%-20s%-6s", "POSITION",
-                           cd.getPosition0 ().toString ("%.3f"));
-                  contactEvents.append (row + System.lineSeparator ());
-                  row =
-                     String
-                        .format (
-                           "%-20s%-6s", "CONTACT FORCE (N)",
-                           cd.getContactForce ().toString ("%.3f"));
-                  contactEvents.append (row + System.lineSeparator ());
-                  row =
-                     String
-                        .format (
-                           "%-20s%-6s", "FRICTION FORCE (N)",
-                           cd.getFrictionForce ().toString ("%.3f"));
-                  contactEvents.append (row + System.lineSeparator ());
-               });
-            }
-         }
-         else {
-            contactEvents
-               .append ("NO CONTACT DETECTED." + System.lineSeparator ());
-         }
+            "----------------------------- TIME " + t0
+            + "-----------------------------\n\n")
+         .append ("DETECT CONTACT EVENTS" + "\n\n");
+      collResp.forEach (cr -> {
+         contactEvents.append (collectContactEvents (cr));
       });
       writer.print (contactEvents.toString ());
       writer.flush ();
@@ -170,11 +132,8 @@ public class ContactMonitor extends MonitorBase {
     * Name specifier for the current working directory
     * @throws IOException
     */
-   private void initializeWriter (String name) throws IOException {
-      this.msgName = name + "/Output/" + name + "_message_file.txt";
-      this.msgPath =
-         ArtisynthPath
-            .getSrcRelativePath (GaitModel.class, msgName).toString ();
+   private void initializeWriter (String filepath) throws IOException {
+      this.msgPath = filepath;
       writer = new PrintWriter (new FileWriter (msgPath, false));
       this.isActive = false;
    }
