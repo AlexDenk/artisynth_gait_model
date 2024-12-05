@@ -8,7 +8,7 @@ If you use the model or parts of it in your research, please cite the following 
 
 ![General model overview](Gait2392_Demo.gif)
 
-The image shows the generated multibody model controlled by Inverse Kinematics. Ground reaction forces are available, but incorporation is still under development.
+The image shows the generated multibody model controlled by Inverse Kinematics. Notice, that the ground-pelvis joint was removed in this model, since it is unnecessary in Artisynth. Ground reaction forces are available, but incorporation is still under development.
 
 ![Inverse Simulation overview](Gait2392_Demo.png)
 
