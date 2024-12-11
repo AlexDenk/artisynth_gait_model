@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -16,84 +17,37 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import artisynth.core.driver.Main;
-import artisynth.core.femmodels.FemElement3dBase;
+import artisynth.core.femmodels.*;
 import artisynth.core.femmodels.FemModel.Ranging;
 import artisynth.core.femmodels.FemModel.SurfaceRender;
-import artisynth.core.femmodels.FemModel3d;
-import artisynth.core.femmodels.FemNode3d;
 import artisynth.core.gui.ControlPanel;
-import artisynth.core.inverse.ConnectorForceRenderer;
-import artisynth.core.inverse.FrameExciter;
+import artisynth.core.inverse.*;
 import artisynth.core.inverse.FrameExciter.WrenchDof;
-import artisynth.core.inverse.InverseManager;
 import artisynth.core.inverse.InverseManager.ProbeID;
-import artisynth.core.inverse.MotionTargetTerm;
-import artisynth.core.inverse.TargetFrame;
-import artisynth.core.inverse.TargetPoint;
-import artisynth.core.inverse.TrackingController;
-import artisynth.core.materials.LinearMaterial;
-import artisynth.core.materials.Thelen2003AxialMuscle;
-import artisynth.core.mechmodels.CollisionBehavior;
-import artisynth.core.mechmodels.CollisionBehaviorList;
-import artisynth.core.mechmodels.CollisionManager;
-import artisynth.core.mechmodels.Frame;
-import artisynth.core.mechmodels.FrameMarker;
-import artisynth.core.mechmodels.JointBase;
-import artisynth.core.mechmodels.MechModel;
-import artisynth.core.mechmodels.MechSystemSolver;
+import artisynth.core.materials.*;
+import artisynth.core.mechmodels.*;
 import artisynth.core.mechmodels.MechSystemSolver.Integrator;
 import artisynth.core.mechmodels.MechSystemSolver.PosStabilization;
-import artisynth.core.mechmodels.MultiPointMuscle;
-import artisynth.core.mechmodels.PlanarConnector;
-import artisynth.core.mechmodels.PointList;
-import artisynth.core.mechmodels.RigidBody;
-import artisynth.core.modelbase.ComponentListView;
-import artisynth.core.modelbase.Controller;
-import artisynth.core.modelbase.ModelComponent;
-import artisynth.core.modelbase.RenderableComponentList;
+import artisynth.core.modelbase.*;
 import artisynth.core.opensim.OpenSimParser;
+import artisynth.core.opensim.components.ForceSpringBase;
 import artisynth.core.opensim.customjoint.OpenSimCustomJoint;
-import artisynth.core.probes.DataFunction;
-import artisynth.core.probes.IKProbe;
-import artisynth.core.probes.IKSolver;
-import artisynth.core.probes.MarkerMotionData;
-import artisynth.core.probes.NumericControlProbe;
-import artisynth.core.probes.NumericInputProbe;
-import artisynth.core.probes.NumericOutputProbe;
-import artisynth.core.probes.PositionInputProbe;
-import artisynth.core.probes.VelocityInputProbe;
+import artisynth.core.probes.*;
 import artisynth.core.renderables.ColorBar;
 import artisynth.core.util.ArtisynthPath;
 import artisynth.core.workspace.RootModel;
-import artisynth.models.gait_model.ContactMonitor;
-import artisynth.models.gait_model.CoordinateData;
-import artisynth.models.gait_model.CustomTRCReader;
-import artisynth.models.gait_model.ForceData;
-import artisynth.models.gait_model.MOTReader;
-import artisynth.models.gait_model.MarkerMapping;
-import maspack.geometry.Face;
-import maspack.geometry.PolygonalMesh;
-import maspack.geometry.Vertex3d;
+import artisynth.models.gait_model.*;
+
+import maspack.geometry.*;
 import maspack.interpolation.Interpolation;
-import maspack.matrix.AxisAlignedRotation;
-import maspack.matrix.AxisAngle;
-import maspack.matrix.Point3d;
-import maspack.matrix.Quaternion;
-import maspack.matrix.RotationRep;
-import maspack.matrix.Vector3d;
-import maspack.matrix.VectorNd;
-import maspack.render.IsRenderable;
-import maspack.render.RenderList;
-import maspack.render.RenderProps;
-import maspack.render.Renderer;
+import maspack.matrix.*;
+import maspack.render.*;
 import maspack.render.Renderer.FaceStyle;
 import maspack.render.Renderer.LineStyle;
 import maspack.render.Renderer.Shading;
 import maspack.render.Viewer.RotationMode;
 import maspack.spatialmotion.Wrench;
-import maspack.util.Clonable;
-import maspack.util.DoubleInterval;
-import maspack.util.PathFinder;
+import maspack.util.*;
 
 /**
  * @author Alexander Denk Copyright (c) 2023-2024 <br>
@@ -106,7 +60,7 @@ public class GaitModel extends RootModel {
    // ----------------------------Instance Fields-------------------------------
    // All rigid bodies in the model
    RenderableComponentList<RigidBody> myBodies = null;
-   // Calculated generalized angles
+   // Calculated generalized joint angles
    CoordinateData myCoords;
    // Experimental force data
    ForceData myForces;
@@ -114,7 +68,7 @@ public class GaitModel extends RootModel {
    RenderableComponentList<JointBase> myJoints;
    // All markers in the model
    RenderableComponentList<FrameMarker> myMarkers = null;
-   // Current model
+   // Current mechmodel
    MechModel myMech = new MechModel ();
    // All finite element meshes in the model
    List<FemModel3d> myMeshes = new ArrayList<FemModel3d> ();
@@ -123,12 +77,125 @@ public class GaitModel extends RootModel {
    // Experimental marker trajectories
    MarkerMotionData myMotion;
    // A list of each muscle in the model
-   List<MultiPointMuscle> myMuscles = new ArrayList<MultiPointMuscle> ();
+   List<MuscleComponent> myMuscles = new ArrayList<MuscleComponent> ();
    // Name of the current working directory
    String myName = null;
    // Scale of the model.
    double myScale;
-
+   // Used to track whether inverse kinematics is used
+   boolean myUseIK = true;
+   // Used to track whether ground reaction forces are used
+   boolean myUseGRF = true;
+   // Arrays of grouped muscles, sorted by location and function
+   String[] gluts =
+      new String[] { "glut_med1_r",
+                     "glut_med2_r",
+                     "glut_med3_r",
+                     "glut_min1_r",
+                     "glut_min2_r",
+                     "glut_min3_r",
+                     "glut_max1_r",
+                     "glut_max2_r",
+                     "glut_max3_r",
+                     "glut_med1_l",
+                     "glut_med2_l",
+                     "glut_med3_l",
+                     "glut_min1_l",
+                     "glut_min2_l",
+                     "glut_min3_l",
+                     "glut_max1_l",
+                     "glut_max2_l",
+                     "glut_max3_l"};
+   String[] pelvisFemur =
+      new String[] { "add_long_r",
+                     "add_brev_r",
+                     "add_mag1_r",
+                     "add_mag2_r",
+                     "add_mag3_r",
+                     "pect_r",
+                     "iliacus_r",
+                     "psoas_r",
+                     "quad_fem_r",
+                     "gem_r",
+                     "peri_r",
+                     "add_long_l",
+                     "add_brev_l",
+                     "add_mag1_l",
+                     "add_mag2_l",
+                     "add_mag3_l",
+                     "pect_l",
+                     "iliacus_l",
+                     "psoas_l",
+                     "quad_fem_l",
+                     "gem_l",
+                     "peri_l"};
+   String[] pelvisTibia =
+      new String[] { "semimem_r",
+                     "semiten_r",
+                     "bifemlh_r",
+                     "sar_r",
+                     "tfl_r",
+                     "grac_r",
+                     "rect_fem_r",
+                     "semimem_l",
+                     "semiten_l",
+                     "bifemlh_l",
+                     "sar_l",
+                     "tfl_l",
+                     "grac_l",
+                     "rect_fem_l"};
+   String[] femurTibia =
+      new String[] { "bifemsh_r",
+                     "vas_med_r",
+                     "vas_int_r",
+                     "vas_lat_r",
+                     "bifemsh_l",
+                     "vas_med_l",
+                     "vas_int_l",
+                     "vas_lat_l"};
+   String[] problemMuscles =
+      new String[] { "rect_fem_l",
+                     "rect_fem_r",
+                     "vas_med_r",
+                     "vas_lat_r",
+                     "vas_med_l",
+                     "vas_lat_l",
+                     "ext_dig_r",
+                     "ext_dig_l"};
+   String[] femurCalcn =
+      new String[] { "med_gas_r",
+                     "lat_gas_r",
+                     "med_gas_l",
+                     "lat_gas_l"};
+   String[] tibiaCalcn =
+      new String[] { "soleus_r",
+                     "tib_post_r",
+                     "tib_ant_r",
+                     "per_brev_r",
+                     "per_long_r",
+                     "per_tert_r",
+                     "soleus_l",
+                     "tib_post_l",
+                     "tib_ant_l",
+                     "per_brev_l",
+                     "per_long_l",
+                     "per_tert_l"};
+   String[] tibiaToes =
+      new String[] { "flex_dig_r",
+                     "flex_hal_r",
+                     "ext_dig_r",
+                     "ext_hal_r",
+                     "flex_dig_l",
+                     "flex_hal_l",
+                     "ext_dig_l",
+                     "ext_hal_l"};
+   String[] pelvisTorso =
+      new String[] { "extobl_r",
+                     "intobl_r", 
+                     "ercspn_r",
+                     "extobl_l",
+                     "intobl_l",
+                     "ercspn_l"};
    // ----------------------------Nested classes--------------------------------
    public class MomentArmFunction
    implements DataFunction, Clonable, IsRenderable {
@@ -203,6 +270,7 @@ public class GaitModel extends RootModel {
          message.append (wrench.toString ("%.3f")).append ("\n");
          writer.print (message);
          writer.flush ();
+         message.delete (0, message.length ());
       }
 
       @Override
@@ -229,6 +297,61 @@ public class GaitModel extends RootModel {
       }
    }
 
+   public class JointMomentFunction implements DataFunction, Clonable {
+      JointBase myJoint;
+      String myJointConstraint;
+      double myMass;
+
+      public JointMomentFunction (JointBase joint, String constraint) {
+         this.myJoint = joint;
+         this.myJointConstraint = constraint;
+         this.myMass = myMech.getActiveMass ();
+      }
+
+      public Object clone () throws CloneNotSupportedException {
+         return super.clone ();
+      }
+
+      public void eval (VectorNd vec, double t, double trel) {
+         Vector3d uniBufInA = myJoint.getUnilateralForceInA ().m;
+         Vector3d biBufInA = myJoint.getBilateralForceInA ().m;
+         VectorNd mom = new VectorNd (1);
+         switch (myJoint.getName ()) {
+            case "back":
+               if (myJointConstraint.contains ("extension"))
+                  mom.set (0, biBufInA.z + uniBufInA.z);
+               if (myJointConstraint.contains ("bending"))
+                  mom.set (0, biBufInA.x + uniBufInA.x);
+               if (myJointConstraint.contains ("rotation"))
+                  mom.set (0, biBufInA.y + uniBufInA.y);
+               break;
+            case "hip_r":
+            case "hip_l":
+               if (myJointConstraint.contains ("flexion"))
+                  mom.set (0, biBufInA.z + uniBufInA.z);
+               if (myJointConstraint.contains ("adduction"))
+                  mom.set (0, biBufInA.x + uniBufInA.x);
+               if (myJointConstraint.contains ("rotation"))
+                  mom.set (0, biBufInA.y + uniBufInA.y);
+               break;
+            case "knee_r":
+            case "knee_l":
+            case "ankle_r":
+            case "ankle_l":
+            case "mtp_r":
+            case "mtp_l":
+               mom.set (0, biBufInA.z + uniBufInA.z);
+               break;
+            case "subtalar_r":
+            case "subtalar_l":
+               mom.set (0, biBufInA.x + uniBufInA.x);
+               break;
+         }
+         vec.add (mom);
+         // vec.scaledAdd (1 / myMass, mom);
+      }
+   }
+
    // -----------------------------Constructors---------------------------------
    public GaitModel () {
    }
@@ -237,28 +360,29 @@ public class GaitModel extends RootModel {
       super (name);
    }
 
+   public GaitModel (String name, boolean ik, boolean grf) throws IOException {
+      super (name);
+      this.myUseIK = ik;
+      this.myUseGRF = grf;
+   }
+
    // --------------------------Static Methods----------------------------------
    public static void main (String[] args) throws IOException {
    }
 
    // -------------------------Instance Methods---------------------------------
-
-   // TODO: Subdivide step 1 (gen coords) and step 2 (dynamics) in two
-   // subclasses
-
    @Override
    public void build (String[] args) throws IOException {
       super.build (args);
       // Get model name specifier from user
       JFileChooser fc = new JFileChooser ();
       myName = getNameFromFileDiaglog (fc);
-      // myName = "EP021FW1960-B-3Gang02";
       myMech.setName (myName);
       addModel (myMech);
       setSimulationProperties ();
       initializeOsim (myName, myScale);
       CollisionManager collMan = myMech.getCollisionManager ();
-      setContactProps (collMan);
+      setContactProps (collMan, myName);
       initializeIOProbes (myName, myScale);
       setRenderProps (collMan, myScale);
       writeInputToFile (myName);
@@ -320,9 +444,8 @@ public class GaitModel extends RootModel {
     * Unit scaling factor for the current model (m = 1, mm = 1000)
     */
    public void setContactRenderProps (CollisionManager coll, double scale) {
-      if (!(coll instanceof CollisionManager))
-         throw new IllegalArgumentException (
-            "Must use an object of class CollisionManager");
+      if (coll == null)
+         return;
       if (scale < 0)
          throw new IllegalArgumentException ("Scale factor must be > 0");
       // Define body - body contact render props
@@ -385,7 +508,7 @@ public class GaitModel extends RootModel {
     * Unit scaling factor for the current model (m = 1, mm = 1000)
     */
    public void setMuscleRenderProps (
-      List<MultiPointMuscle> muscles, double scale) {
+      List<MuscleComponent> muscles, double scale) {
       if (scale < 0)
          throw new IllegalArgumentException ("Scale factor must be > 0");
       muscles.forEach (msc -> {
@@ -534,12 +657,12 @@ public class GaitModel extends RootModel {
       controller.setUseKKTFactorization (false);
       controller.setComputeIncrementally (false);
       controller.setExcitationDamping ();
-      controller.setL2Regularization ();
+      controller.setL2Regularization (0.001);
       // Adjust MotionTargetTerm properties
       MotionTargetTerm motionTerm = controller.getMotionTargetTerm ();
       motionTerm.setUsePDControl (true);
       motionTerm.setChaseTime (getMaxStepSize ());
-      motionTerm.setKd (1 / getMaxStepSize ());
+      motionTerm.setKd (0.1 / getMaxStepSize ());
       motionTerm.setKp (1 / (getMaxStepSize () * motionTerm.getChaseTime ()));
       controller.createPanel (this);
       addController (controller);
@@ -552,11 +675,14 @@ public class GaitModel extends RootModel {
     * 
     * @param coords
     * {@link CoordinateData}
+    * @param start
+    * start time
+    * @param stop
+    * stop time
     */
-   private void addCoordsInputProbes (CoordinateData coords) {
+   private void addCoordsInputProbes (
+      CoordinateData coords, double start, double stop) {
       if (coords != null) {
-         double start = coords.getFrameTime (0);
-         double stop = coords.getFrameTime (coords.numFrames () - 1);
          myJoints.forEach (jt -> {
             for (int j = 0; j < jt.numCoordinates (); j++) {
                createCoordsInputProbe (
@@ -564,6 +690,24 @@ public class GaitModel extends RootModel {
             }
          });
       }
+   }
+   
+   /**
+    * Adds the position error as numeric output probe
+    * 
+    * @param controller
+    * {@link TrackingController}
+    * @param start
+    * start time
+    * @param stop
+    * stop time
+    * @param step
+    * step size
+    */
+   private void addErrorOutputProbes (
+      TrackingController controller, double start, double stop, double step) {
+      MotionTargetTerm mTerm = controller.getMotionTargetTerm ();
+      createProbeAndPanel (mTerm, null, "positionError", start, stop, step);
    }
 
    /**
@@ -575,51 +719,70 @@ public class GaitModel extends RootModel {
     */
    private void addExcitersToController (TrackingController controller) {
       // Muscles
-      // controller.addExciters (myMuscles);
+      controller.addExciters (myMuscles);
       // Frame Exciters
+      HashSet<String> bodyNames = new HashSet<> ();
+      //bodyNames.add ("torso");
+      bodyNames.add ("pelvis");
+      //bodyNames.add ("femur_r");
+      //bodyNames.add ("femur_l");
+      //bodyNames.add ("tibia_r");
+      //bodyNames.add ("tibia_l");
+      //bodyNames.add ("talus_r");
+      //bodyNames.add ("talus_l");
+      bodyNames.add ("calcn_r");
+      bodyNames.add ("calcn_l");
+      //bodyNames.add ("toes_r");
+      //bodyNames.add ("toes_l");
       myBodies.forEach (body -> {
+         if (!bodyNames.contains (body.getName ())) {
+            return;
+         }
          if (body.getMass () == 0)
             return;
          double maxForce;
          double maxMoment;
-         double[] scale = new double[6];
-         double[] weights = new double[] { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+         double[] scale = new double[] { 1, 1, 1, 1, 1, 1 };
+         double[] weights = new double[] { 1, 1, 1, 1, 1, 1 };
          switch (body.getName ()) {
-            case "pelvis":
-               maxForce = 30 * myMech.getActiveMass ();
-               maxMoment = 20;
-               scale[0] = 0.3;
-               scale[1] = 1;
-               scale[2] = 0.3;
-               scale[3] = 1;
-               scale[4] = 1;
-               scale[5] = 1;
-               break;
-            case "torso":
-               maxForce = 2 * body.getMass ();
-               maxMoment = 20;
-               scale[0] = 1;
-               scale[1] = 1;
-               scale[2] = 1;
-               scale[3] = 1;
-               scale[4] = 1;
-               scale[5] = 1;
+            case "calcn_l":
+            case "calcn_r":
+               //maxForce =
+               //   2 * myMech.getGravity ().norm () * myMech.getActiveMass ();
+               maxForce = 300;
+               maxMoment = maxForce;
+               //scale[0] = 1;
+               //scale[1] = 1;
+               //scale[2] = 1;
+               //scale[3] = 0.3;
+               //scale[4] = 0.3;
+               //scale[5] = 1;
+               //weights[0] = 1e0;
+               //weights[1] = 1e0;
+               //weights[2] = 1e0;
+               //weights[3] = 1e0;
+               //weights[4] = 1e0;
+               //weights[5] = 1e0;
                break;
             default:
-               maxForce = 1 * body.getMass ();
-               maxMoment = 3 * body.getMass ();
-               scale[0] = 1;
-               scale[1] = 1;
-               scale[2] = 1;
-               scale[3] = 1;
-               scale[4] = 1;
-               scale[5] = 1;
+               maxForce = 40 * body.getMass ();
+               maxMoment = maxForce;
+               //scale[0] = 1;
+               //scale[1] = 1;
+               //scale[2] = 1;
+               //scale[3] = 1;
+               //scale[4] = 1;
+               //scale[5] = 1;
+               //weights[0] = 1e0;
+               //weights[1] = 1e0;
+               //weights[2] = 1e0;
+               //weights[3] = 1e0;
+               //weights[4] = 1e0;
+               //weights[5] = 1e0;
                break;
-
          }
          createAndAddFrameExciters (
             controller, myMech, body, maxForce, maxMoment, scale, weights);
-
       });
    }
 
@@ -629,42 +792,24 @@ public class GaitModel extends RootModel {
     * 
     * @param forces
     * {@link ForceData}
+    * @param start
+    * start time
+    * @param stop
+    * stop time
+    * @param scale
+    * Unit scaling factor (1 = m, 1000 = mm)
     */
-   private void addForceInputProbes (ForceData forces, double scale) {
-      if (forces != null) {
-         RigidBody calcnR = myBodies.get ("calcn_r");
-         createForceInputProbe (forces, calcnR, "Right", scale);
-         RigidBody calcnL = myBodies.get ("calcn_l");
-         createForceInputProbe (forces, calcnL, "Left", scale);
-      }
-   }
-
-   /**
-    * Defines the frame targets of the {@link MotionTargetTerm} of the
-    * {@link TrackingController} and creates a {@link NumericInputProbe} for
-    * each target.
-    * 
-    * @param controller
-    * TrackingController
-    * @param motion
-    * experimental marker trajectories
-    */
-   private void addFrameTargetsAndProbes (
-      TrackingController controller, MarkerMotionData motion) {
-      if (motion == null) {
+   private void addForceInputProbes (
+      ForceData forces, double start, double stop, double scale) {
+      if (forces == null)
          return;
-      }
-      myBodies.forEach (b -> {
-         TargetFrame target = controller.addFrameTarget (b);
-         try {
-            createFrameTargetInputProbe (target, motion, "orientation");
-            createFrameTargetInputProbe (target, motion, "position");
-            createFrameTargetInputProbe (target, motion, "velocity");
-         }
-         catch (IOException e) {
-            e.printStackTrace ();
-         }
-      });
+      if (myUseGRF == false)
+         return;
+      RigidBody calcnR = myBodies.get ("calcn_r");
+      createForceInputProbe (forces, calcnR, "Right", start, stop, scale);
+      RigidBody calcnL = myBodies.get ("calcn_l");
+      createForceInputProbe (forces, calcnL, "Left", start, stop, scale);
+
    }
 
    /**
@@ -684,9 +829,46 @@ public class GaitModel extends RootModel {
          for (int i = 0; i < jt.numCoordinates (); i++) {
             createProbeAndPanel (
                jt, jointPanel, jt.getCoordinateName (i), start, stop, step);
+            jointPanel
+               .addWidget (
+                  jt.getName () + " locked", jt,
+                  jt.getCoordinateName (i) + "_locked");
          }
       });
       addControlPanel (jointPanel);
+   }
+
+   /**
+    * Adds output probes for joint forces and moments
+    * 
+    * @param start
+    * start time
+    * @param stop
+    * stop time
+    * @param step
+    * step size
+    */
+   private void addJointLoadOutputProbes (
+      double start, double stop, double step) {
+      myJoints.forEach (joint -> {
+         for (int i = 0; i < joint.numCoordinates (); i++) {
+            String probeName =
+               joint.getName () + " " + joint.getCoordinateName (i) + "_moment";
+            String filepath =
+               PathFinder
+                  .getSourceRelativePath (
+                     this, "/" + myName + "/Output/" + probeName + ".txt");
+            NumericMonitorProbe momProbe =
+               new NumericMonitorProbe (1, filepath, start, stop, step);
+            momProbe.setModel (myMech);
+            momProbe.setName (probeName);
+            momProbe.setInterpolationOrder (Interpolation.Order.Cubic);
+            JointMomentFunction momentSum =
+               new JointMomentFunction (joint, joint.getCoordinateName (i));
+            momProbe.setDataFunction (momentSum);
+            addOutputProbe (momProbe);
+         }
+      });
    }
 
    /**
@@ -707,11 +889,15 @@ public class GaitModel extends RootModel {
       ControlPanel musclePanel = new ControlPanel ("Muscle Properties");
       controller.getExciters ().forEach (e -> {
          if (e instanceof FrameExciter) {
-            createProbeAndPanel (
-               e, musclePanel, "excitation", start, stop, step);
+            // createProbeAndPanel (
+            // e, musclePanel, "excitation", start, stop, step);
+            musclePanel
+               .addWidget (e.getName () + "excitation", e, "excitation");
+            // for debugging
             musclePanel.addWidget (e.getName () + " maxForce", e, "maxForce");
          }
          else {
+            createProbeAndPanel (e, null, "forceNorm", start, stop, step);
             musclePanel
                .addWidget (e.getName () + " excitation", e, "excitation");
          }
@@ -722,28 +908,27 @@ public class GaitModel extends RootModel {
    /**
     * Creates the default {@link NumericOutputProbe} of the
     * {@link TrackingController} and fills a control panel with all
-    * corresponding properties if specified
+    * corresponding properties if specified.
     * 
     * @param motion
     * {@link MarkerMotionData}
+    * @param start
+    * start time
+    * @param stop
+    * stop time
     */
    private void addNumOutputProbesAndPanel (
-      MarkerMotionData motion, TrackingController controller) {
+      MarkerMotionData motion, TrackingController controller, double start, double stop) {
       if (motion == null)
          return;
-      double start = motion.getFrameTime (0);
-      double stop = motion.getFrameTime (motion.numFrames () - 1);
       double step = getMaxStepSize ();
       if (controller != null) {
          setDefaultOutputProbes (controller, start, stop);
+         addErrorOutputProbes(controller, start, stop, step);
          addMuscleOutputProbes (controller, start, stop, step);
       }
       addJointAngleOutputProbes (start, stop, step);
-      myBodies.forEach (b -> {
-         createProbeAndPanel (b, null, "position", start, stop, step);
-         createProbeAndPanel (b, null, "orientation", start, stop, step);
-         createProbeAndPanel (b, null, "force", start, stop, step);
-      });
+      addJointLoadOutputProbes(start, stop, step);
    }
 
    /**
@@ -758,16 +943,21 @@ public class GaitModel extends RootModel {
     * weights
     * @param motion
     * experimental marker motion data
+    * @param start
+    * start time
+    * @param stop
+    * stop time
     * @throws IOException
+    * if one or multiple files don't exist
     */
    private void addPointTargetsAndProbes (
-      TrackingController controller, MarkerMapping map, MarkerMotionData motion)
+      TrackingController controller, MarkerMapping map, MarkerMotionData motion, double start, double stop)
       throws IOException {
       if (motion == null || map == null)
          return;
+      // Add markers to be targets and set their positions
       VectorNd weights = new VectorNd ();
       ArrayList<FrameMarker> targets = new ArrayList<FrameMarker> ();
-      // Add markers as targets
       for (int i = 0; i < myMarkers.size (); i++) {
          FrameMarker mkr = myMarkers.get (i);
          String markerName = mkr.getName ();
@@ -778,17 +968,49 @@ public class GaitModel extends RootModel {
             targets.add (mkr);
             TargetPoint target = controller.addPointTarget (mkr, weight);
             // Adjust initial position of each target
-            Point3d position =
-               (Point3d)motion.getMarkerPosition (0, expName);
+            Point3d position = (Point3d)motion.getMarkerPosition (0, expName);
             target.setPosition (position);
          }
       }
+      // Add the default MarkerMotionData prior to IK solving
+      NumericInputProbe targetProbe =
+         collectMarkerMotionData (controller, targets, motion, map, start, stop);
+      addInputProbe (targetProbe);
+      if (myUseIK) {
+         // Generate achievable target positions by IK
+         PositionInputProbe posProbe =
+            createIKPositions (targets, weights, targetProbe);
+         // Overwrite default marker positions with achievable ones
+         targetProbe.setValues (posProbe, true);
+         // Generate VelocityInputProbes from PositionInputProbes
+         VelocityInputProbe velProbe = createVelProbe (posProbe);
+         addInputProbe (velProbe);
+      }
+   }
 
-      // Generate inverse kinematics probes from positions
-      String ikProbeName = "IK model markers";
-      double end = motion.getFrameTime (motion.numFrames () - 1);
-      IKProbe ikProbe =
-         new IKProbe (ikProbeName, myMech, targets, weights, 0.0, end);
+   /**
+    * Effectively stores the original marker positions as specified in
+    * {@code motion} to hand them to an IK solver later.
+    * 
+    * @param controller
+    * TrackingController
+    * @param targets
+    * Collection of PointTargets
+    * @param motion
+    * MarkerMotionData
+    * @param map
+    * MarkerMapping
+    * @param stop 
+    * @param start 
+    * @return
+    */
+   private NumericInputProbe collectMarkerMotionData (
+      TrackingController controller, ArrayList<FrameMarker> targets,
+      MarkerMotionData motion, MarkerMapping map, double start, double stop) {
+      NumericInputProbe targetProbe =
+         InverseManager
+            .createInputProbe (
+               controller, ProbeID.TARGET_POSITIONS, null, start, stop);
       VectorNd positions = new VectorNd (3 * targets.size ());
       for (int i = 0; i < motion.numFrames (); i++) {
          for (int j = 0; j < targets.size (); j++) {
@@ -800,24 +1022,9 @@ public class GaitModel extends RootModel {
             positions.set (3 * j + 2, pos.z);
          }
          double time = motion.getFrameTime (i);
-         ikProbe.addData (time, positions);
+         targetProbe.addData (time, positions);
       }
-      addInputProbe (ikProbe);
-      ikProbe.setBodiesNonDynamicIfActive (true);
-
-      // Generate PositionInputProbes from IKSolver
-      String posProbeName = "IK target positions";
-      double step = getMaxStepSize ();
-      IKSolver solver = ikProbe.getSolver ();
-      PositionInputProbe posProbe =
-         solver.createMarkerPositionProbe (posProbeName, ikProbe, step);
-      posProbe.setInterpolationOrder (Interpolation.Order.Cubic);
-      addInputProbe (posProbe);
-
-      VelocityInputProbe velProbe =
-         VelocityInputProbe
-            .createInterpolated ("IK target velocities", posProbe, step);
-      addInputProbe (velProbe);
+      return targetProbe;
    }
 
    /**
@@ -940,24 +1147,23 @@ public class GaitModel extends RootModel {
     * Rigid body to apply the input probe to
     * @param side
     * left or right
+    * @param scale2 
+    * @param stop 
     * 
     */
    private void createForceInputProbe (
-      ForceData forces, Frame frame, String side, double scale) {
+      ForceData forces, Frame frame, String side, double start, double stop, double scale) {
       NumericControlProbe grf = new NumericControlProbe ();
       grf.setModel (myMech);
       grf.setName (frame.getName () + " ground reaction forces");
-      double duration =
-         forces.getFrameTime (forces.numFrames () - 1)
-         - forces.getFrameTime (0);
-      grf.setStartStopTimes (0.0, duration);
+      grf.setStartStopTimes (start, stop);
       grf.setInterpolationOrder (Interpolation.Order.Cubic);
       MomentArmFunction momentArm = new MomentArmFunction (frame, side, scale);
       Main.getMain ().getViewer ().addRenderable (momentArm);
       grf.setDataFunction (momentArm);
       grf.setVsize (6);
-
-      for (int i = 0; i < forces.numFrames (); i++) {
+      
+      for (int i = 0; i < forces.getFrame (stop); i++) {
          VectorNd force = new VectorNd (6);
          double time = forces.getFrameTime (i);
          force.add (0, forces.getData (i, side + " GRF").x);
@@ -968,164 +1174,34 @@ public class GaitModel extends RootModel {
          force.add (5, forces.getData (i, side + " GRM").z);
          grf.addData (time, force);
       }
-      grf.setActive (true);
       addInputProbe (grf);
    }
-
+   
    /**
-    * Generates a {@link NumericInputProbe} of the specified property based on
-    * the associated input files from parametric control runs.
+    * Generates achievable positions for the PointTargets in {@code targets} by
+    * solving an inverse kinematics problem. The calculated new PointTarget
+    * positions are then used as actual target positions by the
+    * TrackingController.
     * 
-    * @param frame
-    * component related to the input probe
-    * @param motion
-    * experimental motion data containing the time series
-    * @param prop
-    * property name
-    * @return VectorNd array containing the probe data
-    * @throws IOException
-    * if attached file doesn't exist
+    * @param targets
+    * Collection of PointTargets
+    * @param weights
+    * VectorNd containing the marker weights
+    * @param targetProbe
+    * NumericInputProbe containing the original marker positions
+    * @return
     */
-   private void createFrameTargetInputProbe (
-      Frame frame, MarkerMotionData motion, String prop)
-      throws IOException {
-      if (prop == "velocity") {
-         double duration =
-            motion.getFrameTime (motion.numFrames () - 1)
-            - motion.getFrameTime (0);
-         NumericInputProbe velocity =
-            new NumericInputProbe (frame, prop, 0.0, duration);
-         velocity.setName (frame.getName () + " velocity");
-         velocity.setInterpolationOrder (Interpolation.Order.Cubic);
-         // collect positions and orientations
-         String path =
-            myName + "/Input/" + frame.getName () + " " + "position" + ".txt";
-         String file = ArtisynthPath.getSrcRelativePath (this, path);
-         NumericInputProbe pos =
-            new NumericInputProbe (frame, "position", file);
-         path =
-            myName + "/Input/" + frame.getName () + " " + "orientation"
-            + ".txt";
-         file = ArtisynthPath.getSrcRelativePath (this, path);
-         NumericInputProbe orient =
-            new NumericInputProbe (frame, "orientation", file);
-         // pass positions and orientations to probe
-         for (int i = 0; i < motion.numFrames () - 1; i++) {
-            double t0 = motion.getFrameTime (i);
-            double t1 = motion.getFrameTime (i + 1);
-            double deltaTime = t1 - t0;
-            // calculate translational velocity v
-            VectorNd post0 = pos.getData (t0);
-            VectorNd post1 = pos.getData (t1);
-            VectorNd deltaPos = new VectorNd ();
-            deltaPos.sub (post1, post0);
-            VectorNd v = new VectorNd ();
-            v.scale (1 / deltaTime, deltaPos);
-            // calculate rotational velocity w
-            VectorNd buf = orient.getData (t0);
-            Quaternion qt0 =
-               new Quaternion (
-                  new AxisAngle (
-                     buf.get (0), buf.get (1), buf.get (2), buf.get (3)));
-            buf = orient.getData (t1);
-            Quaternion qt1 =
-               new Quaternion (
-                  new AxisAngle (
-                     buf.get (0), buf.get (1), buf.get (2), buf.get (3)));
-            Quaternion deltaQ = new Quaternion ();
-            deltaQ.mulInverseLeft (qt0, qt1);
-            AxisAngle deltaAxis = new AxisAngle ();
-            deltaQ.getAxisAngle (deltaAxis);
-            Vector3d w = new Vector3d ();
-            w.scale (deltaAxis.angle / deltaTime, deltaAxis.axis);
-            // create and pass twist
-            VectorNd vel = new VectorNd (6);
-            vel.set (0, v.get (0));
-            vel.set (1, v.get (1));
-            vel.set (2, v.get (2));
-            vel.set (3, w.get (0));
-            vel.set (4, w.get (1));
-            vel.set (5, w.get (2));
-            velocity.addData (t0, vel);
-         }
-         velocity.setActive (true);
-         addInputProbe (velocity);
-      }
-      else {
-         String file =
-            ArtisynthPath
-               .getSrcRelativePath (
-                  this,
-                  myName + "/Input/" + frame.getName () + " " + prop + ".txt");
-         NumericInputProbe probe = new NumericInputProbe (frame, prop, file);
-         probe.setName (frame.getName () + " " + prop);
-         probe.setInterpolationOrder (Interpolation.Order.Cubic);
-         addInputProbe (probe);
-      }
-   }
-
-   /**
-    * Generates a {@link NumericInputProbe} of the specified property
-    * {@code prop} based on the associated {@link MarkerMotionData}.
-    * 
-    * @param target
-    * PointTarget
-    * @param prop
-    * Property
-    * @param motion
-    * MarkerMotionData
-    * @param map
-    * MarkerMapping
-    */
-   private void createPointTargetInputProbe (
-      TargetPoint target, String prop, MarkerMotionData motion,
-      MarkerMapping map) {
-      double start = motion.getFrameTime (0);
-      double stop = motion.getFrameTime (motion.numFrames () - 1);
-      NumericInputProbe probe =
-         new NumericInputProbe (target, prop, start, stop);
-      probe.setName (target.getName () + " " + prop);
-      probe.setInterpolationOrder (Interpolation.Order.Cubic);
-      String mLabel = target.getSourceComp ().getName ();
-
-      if (prop == "position") {
-         for (int i = 0; i < motion.numFrames (); i++) {
-            VectorNd pos = new VectorNd ();
-            String eLabel = map.getExpLabelFromModel (mLabel);
-            pos.append (motion.getMarkerPosition (i, eLabel).x);
-            pos.append (motion.getMarkerPosition (i, eLabel).y);
-            pos.append (motion.getMarkerPosition (i, eLabel).z);
-            double time = motion.getFrameTime (i);
-            probe.addData (time, pos);
-            // Adjust initial target position
-            if (i == 0) {
-               Point3d position = (Point3d)motion.getMarkerPosition (i, eLabel);
-               target.setPosition (position);
-            }
-         }
-      }
-      if (prop == "velocity") {
-         for (int i = 0; i < motion.numFrames () - 1; i++) {
-            String label = map.getExpLabelFromModel (mLabel);
-            VectorNd post0 = new VectorNd ();
-            post0.append (motion.getMarkerPosition (i, label).x);
-            post0.append (motion.getMarkerPosition (i, label).y);
-            post0.append (motion.getMarkerPosition (i, label).z);
-            VectorNd post1 = new VectorNd ();
-            post1.append (motion.getMarkerPosition (i + 1, label).x);
-            post1.append (motion.getMarkerPosition (i + 1, label).y);
-            post1.append (motion.getMarkerPosition (i + 1, label).z);
-            VectorNd deltaPos = new VectorNd ();
-            deltaPos.sub (post1, post0);
-            double t0 = motion.getFrameTime (i);
-            double t1 = motion.getFrameTime (i + 1);
-            double deltaTime = t1 - t0;
-            VectorNd vel = new VectorNd ();
-            vel.scale (1 / deltaTime, deltaPos);
-            probe.addData (t0, vel);
-         }
-      }
-      addInputProbe (probe);
+   private PositionInputProbe createIKPositions (
+      ArrayList<FrameMarker> targets, VectorNd weights,
+      NumericInputProbe targetProbe) {
+      String posProbeName = "IK target positions";
+      IKSolver solver = new IKSolver (myMech, targets, weights);
+      PositionInputProbe posProbe =
+         solver.createMarkerPositionProbe (posProbeName, targetProbe, -1);
+      VectorNd targs0 = targetProbe.getNumericList ().getFirst ().v;
+      int niters = solver.solve (targs0);
+      System.out.println ("in " + niters + " iterattions");
+      return posProbe;
    }
 
    /**
@@ -1167,6 +1243,29 @@ public class GaitModel extends RootModel {
    }
 
    /**
+    * Creates a VelocityInputProbe to the according PositionInputProbe
+    * {@code posProbe}.
+    * 
+    * @param posProbe
+    * @return
+    */
+   private VelocityInputProbe createVelProbe (PositionInputProbe posProbe) {
+      Double step = getMaxStepSize ();
+      VelocityInputProbe velProbe =
+         VelocityInputProbe
+            .createInterpolated ("target velocities", posProbe, step);
+      // smooth velocities, since they were kind of wobbly. Done by John,
+      // generalised by me
+      int wsize = (int)(0.21 / getMaxStepSize ());
+      velProbe.smoothWithSavitzkyGolay (wsize, 4);
+      velProbe.setActive (true);
+      System.out
+         .println (
+            "Generated velocity input probes based on marker trajectories");
+      return velProbe;
+   }
+
+   /**
     * Queries all {@link RigidBody} objects from the current {@link MechModel}
     * and stores them in a global variable.
     * 
@@ -1178,10 +1277,10 @@ public class GaitModel extends RootModel {
       // Check for unclosed meshes
       myBodies.forEach (b -> {
          PolygonalMesh mesh = b.getCollisionMesh ();
-         System.out.print (b.getName () + ": read ");
-         System.out.println (mesh.getFaces ().size () + " faces.");
          if (!mesh.isClosed ()) {
-            System.err.println ("Warning: Mesh not closed!");
+            System.out.print (b.getName () + ": read ");
+            System.out.print (mesh.getFaces ().size () + " faces. ");
+            System.out.println ("Warning: Mesh not closed.");
          }
       });
       return myBodies;
@@ -1197,7 +1296,7 @@ public class GaitModel extends RootModel {
     */
    private RenderableComponentList<JointBase> getJointsFromOsim (
       RenderableComponentList<RigidBody> myBodies) {
-      double comp = 1e-5;
+      double comp = 0;
       RenderableComponentList<JointBase> joints;
       if (myMech.contains (myMech.get ("jointset"))) {
          System.out.println ("Generated joint constraints from jointset.");
@@ -1210,6 +1309,9 @@ public class GaitModel extends RootModel {
                "Generated joint constraints from ridig body connectors.");
          joints = getJointsFromBodyset (comp);
       }
+      ComponentUtils
+         .deleteComponentAndDependencies (
+            myMech.findComponent ("jointset/ground_pelvis"));
       return joints;
    }
 
@@ -1389,11 +1491,11 @@ public class GaitModel extends RootModel {
                jt.setCoordinateRangeDeg (0, range);
                jt.setCoordinateRangeDeg (1, range);
                jt.setCoordinateRangeDeg (2, range);
-               range.set (0.2, 0.27);
+               range.set (-5, 5);
                jt.setCoordinateRange (3, range);
-               range.set (0.95, 1.05);
+               range.set (-5, 5);
                jt.setCoordinateRange (4, range);
-               range.set (-1.5, 0.11);
+               range.set (-5, 5);
                jt.setCoordinateRange (5, range);
                break;
             case "hip_r":
@@ -1412,7 +1514,7 @@ public class GaitModel extends RootModel {
                break;
             case "subtalar_r":
                range.set (0, 0);
-               jt.setCoordinateRangeDeg (0, range);
+               //jt.setCoordinateRangeDeg (0, range);
                break;
             case "mtp_r":
                range.set (0, 0);
@@ -1434,7 +1536,7 @@ public class GaitModel extends RootModel {
                break;
             case "subtalar_l":
                range.set (0, 0);
-               jt.setCoordinateRangeDeg (0, range);
+               //jt.setCoordinateRangeDeg (0, range);
                break;
             case "mtp_l":
                range.set (0, 0);
@@ -1519,6 +1621,7 @@ public class GaitModel extends RootModel {
    private RenderableComponentList<FrameMarker> getMarkerFromOsim () {
       myMarkers =
          (RenderableComponentList<FrameMarker>)myMech.get ("markerset");
+      System.out.println ("Model markers: " + myMarkers.size ());
       // Overwrite attachments for toe markers, since attached to calcanei
       myMarkers.forEach (m -> {
          RigidBody newFrame = null;
@@ -1548,8 +1651,29 @@ public class GaitModel extends RootModel {
                "Warning: Attachment adjusted for: " + m.getName () + " to: "
                + newFrame.getName ());
       });
-      System.out.println ("Model markers: " + myMarkers.size ());
       return myMarkers;
+   }
+
+   /**
+    * Returns an ArrayList of {@link MuscleComponent} objects for the muscle
+    * identifiers contained in {@code names}.
+    * 
+    * @param names
+    * String containing muscle names
+    * @return
+    */
+   private ArrayList<MuscleComponent> getMuscles (String[] names) {
+      HashSet<String> muscleNames = new HashSet<> ();
+      for (String name : names) {
+         muscleNames.add (name);
+      }
+      ArrayList<MuscleComponent> muscles = new ArrayList<> ();
+      for (MuscleComponent msc : myMuscles) {
+         if (muscleNames.contains (msc.getName ())) {
+            muscles.add (msc);
+         }
+      }
+      return muscles;
    }
 
    /**
@@ -1559,7 +1683,9 @@ public class GaitModel extends RootModel {
     * @return list of multi point muscles
     */
    @SuppressWarnings("unchecked")
-   private List<MultiPointMuscle> getMusclesFromOsim () {
+   private List<MuscleComponent> getMusclesFromOsim () {
+      // Make use of MuscleComponents interface
+      ForceSpringBase.useMuscleComponents = true;
       RenderableComponentList<ModelComponent> forces =
          (RenderableComponentList<ModelComponent>)myMech.get ("forceset");
       forces.forEach (frc -> {
@@ -1567,11 +1693,31 @@ public class GaitModel extends RootModel {
             if (obj instanceof PointList) {
                return;
             }
-            if (obj instanceof MultiPointMuscle) {
-               myMuscles.add ((MultiPointMuscle)obj);
+            if (obj instanceof MuscleComponent) {
+               MuscleComponent muscle = (MuscleComponent)obj;
+               muscle.setExcitation (0.0);
+               myMuscles.add (muscle);
             }
          });
       });
+      setSimpleMuscles (problemMuscles);
+      //setMillardMuscles(problemMuscles);
+      setSimpleMuscles (gluts);
+      //setMillardMuscles (gluts);
+      setSimpleMuscles (pelvisFemur);
+      //setMillardMuscles (pelvisFemur);
+      setSimpleMuscles (pelvisTibia);
+      //setMillardMuscles (pelvisTibia);
+      setSimpleMuscles (femurTibia);
+      //setMillardMuscles (femurTibia);
+      setSimpleMuscles (femurCalcn);
+      //setMillardMuscles (femurCalcn);
+      setSimpleMuscles (tibiaCalcn);
+      //setMillardMuscles (tibiaCalcn);
+      setSimpleMuscles (tibiaToes);
+      //setMillardMuscles (tibiaToes);
+      setSimpleMuscles (pelvisTorso);
+      //setMillardMuscles (pelvisTorso);
       return myMuscles;
    }
 
@@ -1607,22 +1753,24 @@ public class GaitModel extends RootModel {
       // Read all input data
       myMap = readMarkerFile (name);
       myMotion = readTRCFile (name, scale, myMap);
+      double start = 0.0;
+      double stop = myMotion.getFrameTime (myMotion.numFrames () - 1);
       myForces = readForceFile (name);
       myCoords = readCoordsFile (name);
       // Inverse control
       TrackingController controller = addControllerAndProps ();
       addExcitersToController (controller);
-      addPointTargetsAndProbes (controller, myMap, myMotion);
-      addFrameTargetsAndProbes (controller, myMotion);
-      addForceInputProbes (myForces, scale);
+      addPointTargetsAndProbes (controller, myMap, myMotion, start, stop);
+      addForceInputProbes (myForces, start, stop, scale);
       // Parametric control
-      // addCoordsInputProbes (myCoords);
+      //addCoordsInputProbes (myCoords, start, stop);
       // Add output probes
       // TODO: Numeric Monitor Probes for later mesh evaluation (for cases,
       // where the data is not simply collected but generated by a function
       // within the probe itself
-      addNumOutputProbesAndPanel (myMotion, controller);
-      addBreakPoint (myMotion.getFrameTime (myMotion.numFrames () - 1));
+      addNumOutputProbesAndPanel (myMotion, controller, start, stop);
+      // Stop simulation after last frame
+      addBreakPoint (stop);
    }
 
    /**
@@ -1644,9 +1792,6 @@ public class GaitModel extends RootModel {
       myMarkers = getMarkerFromOsim ();
       myMech.scaleDistance (scale);
       myMech.scaleMass (scale);
-      setInitialPose (myName);
-      // Update muscle wrapping after position update
-      myMech.updateWrapSegments ();
    }
 
    /**
@@ -1697,7 +1842,7 @@ public class GaitModel extends RootModel {
          return null;
       }
       // Specify plate and movement direction upon first contact
-      String side = "left";
+      String side = "right";
       int num = 1;
       MOTReader motReader = new MOTReader (motFile, side, num);
       motReader.readData ();
@@ -1838,31 +1983,32 @@ public class GaitModel extends RootModel {
     * 
     * @param coll
     * {@link CollisionManager}
+    * @param name
+    * working directory identifier
     * @throws IOException
     */
-   private void setContactProps (CollisionManager coll) throws IOException {
+   private void setContactProps (CollisionManager coll, String name)
+      throws IOException {
       coll.setName ("Collision manager");
       // Handle overconstrained contact
       coll.setReduceConstraints (true);
       coll.setBilateralVertexContact (false);
-      myJoints.forEach (jt -> {
-         if (jt.getName ().contains ("pelvis")) {
-            return;
-         }
-         RigidBody bodyA = (RigidBody)jt.getBodyA ();
-         RigidBody bodyB = (RigidBody)jt.getBodyB ();
-         // Calculate compliant contact properties
-         double comp = 1;
-         double mass = bodyA.getMass () + bodyB.getMass ();
-         double damp = 2 * 1 * Math.sqrt (1 / comp * mass);
-         createCollision (bodyA, bodyB, comp, damp);
-      });
+      // Add contact interfaces
+      // RigidBody bodyA = (RigidBody)jt.getBodyA ();
+      // RigidBody bodyB = (RigidBody)jt.getBodyB ();
+      // Calculate compliant contact properties
+      // double comp = 1;
+      // double mass = bodyA.getMass () + bodyB.getMass ();
+      // double damp = 2 * 1 * Math.sqrt (1 / comp * mass);
+      // createCollision (bodyA, bodyB, comp, damp);
       // Initialize the contact monitor to handle all individual collision
       // responses
+      String msgName = name + "/Output/" + name + "_message_file.txt";
+      String msgPath =
+         ArtisynthPath.getSrcRelativePath (this, msgName).toString ();
       ContactMonitor contMonitor =
-         new ContactMonitor (coll.responses (), myName);
+         new ContactMonitor (coll.responses (), msgPath);
       contMonitor.setName ("Contact monitor");
-      contMonitor.setUseFullReport (true);
       addMonitor (contMonitor);
    }
 
@@ -1911,48 +2057,6 @@ public class GaitModel extends RootModel {
    }
 
    /**
-    * Sets the initial position of the OpenSim model by reading
-    * {@code myName_startup_positions.txt} in the input folder.
-    * 
-    * @param name
-    * Name specifier of the current model
-    * @throws IOException
-    */
-   private void setInitialPose (String name) throws IOException {
-      String fileName = name + "/Input/" + name + "_startup_position.txt";
-      File file = ArtisynthPath.getSrcRelativeFile (this, fileName);
-      if (!file.exists () || file.isDirectory ()) {
-         return;
-      }
-      BufferedReader reader = new BufferedReader (new FileReader (file));
-      String line;
-      // Skip first line (header)
-      reader.readLine ();
-      while ((line = reader.readLine ()) != null) {
-         line = line.trim ();
-         assert line.length () != 0;
-         String[] tokens = line.split ("\t");
-         if (tokens[2].equals ("ROTARY")) {
-            myJoints
-               .get (tokens[0]).setCoordinateDeg (
-                  Integer.parseInt (tokens[1]), Double.parseDouble (tokens[3]));
-         }
-         else {
-            myJoints
-               .get (tokens[0]).setCoordinate (
-                  Integer.parseInt (tokens[1]), Double.parseDouble (tokens[3]));
-         }
-      }
-      // Update muscle wrapping for new configuration
-      myMech.updateWrapSegments ();
-      // reset muscle rest length to ensure zero passive forces at t0
-      myMuscles.forEach (muscle -> {
-         muscle.setRestLength (muscle.getLength ());
-      });
-      reader.close ();
-   }
-
-   /**
     * Define compliance for the provided joint to prevent overconstraints.
     * 
     * @param jt
@@ -1973,6 +2077,71 @@ public class GaitModel extends RootModel {
       jt.setCompliance (comp);
       jt.setDamping (damp);
    }
+   
+   /**
+    * Takes a list of muscle names and resets their material to a millard
+    * muscle, which is based on the thelen muscle model.
+    * 
+    * @param names
+    * String array containing muscle names
+    * @return MuscleComponent with millard muscle material
+    */
+   private void setMillardMuscles (String[] names) {
+      setMillardMuscles (getMuscles (names));
+   }
+   
+   /**
+    * Performs muscle material conversion, if the original material is of type
+    * {@link EquilibriumAxialMuscle}, e.g. hill-type based muscle models.
+    * 
+    * @param muscles
+    * List of MuscleComponents
+    */
+   private void setMillardMuscles (ArrayList<MuscleComponent> muscles) {
+      for (MuscleComponent mc : muscles) {
+         AxialMaterial mat = mc.getMaterial ();
+         if (mat instanceof EquilibriumAxialMuscle) {
+            EquilibriumAxialMuscle emat = (EquilibriumAxialMuscle)mat;
+            Millard2012AxialMuscle mmat =
+               new Millard2012AxialMuscle (
+                  emat.getMaxIsoForce (), emat.getOptFibreLength (),
+                  emat.getTendonSlackLength (), emat.getOptPennationAngle ());
+            mc.setMaterial (mmat);
+         }
+      }
+   }
+
+   /**
+    * Takes a list of muscle names and resets their material to a simple axial
+    * muscle.
+    * 
+    * @param names
+    * String array containing muscle names
+    * @return MuscleComponent with simple axial material
+    */
+   private void setSimpleMuscles (String[] names) {
+      setSimpleMuscles (getMuscles (names));
+   }
+
+   /**
+    * Performs muscle material conversion, if the original material is of type
+    * {@link EquilibriumAxialMuscle}, e.g. hill-type based muscle models. The
+    * maximum force is 3*isometric force.
+    * 
+    * @param muscles
+    * List of MuscleComponents
+    */
+   private void setSimpleMuscles (List<MuscleComponent> muscles) {
+      for (MuscleComponent mc : muscles) {
+         AxialMaterial mat = mc.getMaterial ();
+         if (mat instanceof EquilibriumAxialMuscle) {
+            EquilibriumAxialMuscle emat = (EquilibriumAxialMuscle)mat;
+            mc
+               .setMaterial (
+                  new SimpleAxialMuscle (0, 0, 3 * emat.getMaxIsoForce ()));
+         }
+      }
+   }
 
    /**
     * Sets the following simulation properties: 1. Solver, 2. Step sizes, 3.
@@ -1982,17 +2151,19 @@ public class GaitModel extends RootModel {
       // Solver properties
       MechSystemSolver.setHybridSolvesEnabled (false);
       MechSystemSolver solver = myMech.getSolver ();
+      // needs to be here as well, since otherwise wrong in the input.txt
+      solver.setHybridSolve (false);
       solver.setIntegrator (Integrator.ConstrainedBackwardEuler);
       solver.setStabilization (PosStabilization.GlobalStiffness);
       // solver.setMaxIterations (100);
       // solver.setTolerance (1e-5);
-      // setMaxStepSize (1e-4);
-      setAdaptiveStepping (true);
+      setMaxStepSize (1e-2);
+      // setAdaptiveStepping (true);
       // Damping properties
-      myMech.setFrameDamping (0.07);
-      myMech.setRotaryDamping (5.0);
-      myMech.setInertialDamping (2.8);
-      myMech.setPointDamping (10.0);
+      // myMech.setFrameDamping ();
+      // myMech.setRotaryDamping (5.0);
+      myMech.setInertialDamping (3.0);
+      // myMech.setPointDamping (10.0);
       // Define scale (mm = 1000, or m = 1)
       myScale = 1.0;
       myMech.setGravity (new Vector3d (0, -9.81, 0));
@@ -2214,42 +2385,48 @@ public class GaitModel extends RootModel {
     * list of {@link MultiPointMuscle} objects
     */
    private void writeMuscleInfo (
-      StringBuilder output, List<MultiPointMuscle> muscles) {
+      StringBuilder output, List<MuscleComponent> muscles) {
       output
          .append ("MUSCLES\n").append ("Number of muscles: ")
          .append (muscles.size ()).append ("\n\n");
-
       muscles.forEach (msc -> {
-         Thelen2003AxialMuscle mat = (Thelen2003AxialMuscle)msc.getMaterial ();
+         AxialMaterial mat = msc.getMaterial ();
          output
             .append ("Name: ").append (msc.getName ()).append ("\n")
             .append ("Material: ").append (mat.getClass ().getSimpleName ())
-            .append ("\n").append ("Max isometric force: ")
-            .append (mat.getMaxIsoForce ()).append ("\n")
-            .append ("Rest length: ")
-            .append (String.format ("%.3f", msc.getRestLength ())).append ("\n")
-            .append ("Opt fiber length: ")
-            .append (String.format ("%.3f", mat.getOptFibreLength ()))
-            .append ("\n").append ("Tendon slack length: ")
-            .append (String.format ("%.3f", mat.getTendonSlackLength ()))
-            .append ("\n").append ("Number of points: ")
-            .append (msc.numPoints ()).append ("\n");
-
-         for (int i = 0; i < msc.numPoints (); i++) {
+            .append ("\n");
+         if (msc.getMaterial () instanceof EquilibriumAxialMuscle) {
+            EquilibriumAxialMuscle emat =
+               (EquilibriumAxialMuscle)msc.getMaterial ();
             output
-               .append ("Point ").append (i).append ("\t")
-               .append (msc.getPoint (i).getPosition ().toString ("%.3f"))
-               .append ("\n");
+               .append ("Max isometric force: ").append (emat.getMaxIsoForce ())
+               .append ("\n").append ("Rest length: ")
+               .append (String.format ("%.3f", msc.getRestLength ()))
+               .append ("\n").append ("Opt fiber length: ")
+               .append (String.format ("%.3f", emat.getOptFibreLength ()))
+               .append ("\n").append ("Tendon slack length: ")
+               .append (String.format ("%.3f", emat.getTendonSlackLength ()))
+               .append ("\n").append ("Number of points: ")
+               .append (msc.numPoints ()).append ("\n");
          }
-         output
-            .append ("Number of segments: ").append (msc.numSegments ())
-            .append ("\n").append ("Number of muscle wrappings: ")
-            .append (msc.numWrappables ()).append ("\n");
-
-         for (int i = 0; i < msc.numWrappables (); i++) {
+         if (msc instanceof MultiPointMuscle) {
+            MultiPointMuscle multi = (MultiPointMuscle)msc;
+            for (int i = 0; i < msc.numPoints (); i++) {
+               output
+                  .append ("Point ").append (i).append ("\t")
+                  .append (multi.getPoint (i).getPosition ().toString ("%.3f"))
+                  .append ("\n");
+            }
             output
-               .append ("Wrapping: ").append (i).append ("\t")
-               .append (msc.getWrappableRange (i)).append ("\n");
+               .append ("Number of segments: ").append (multi.numSegments ())
+               .append ("\n").append ("Number of muscle wrappings: ")
+               .append (multi.numWrappables ()).append ("\n");
+
+            for (int i = 0; i < multi.numWrappables (); i++) {
+               output
+                  .append ("Wrapping: ").append (i).append ("\t")
+                  .append (multi.getWrappableRange (i)).append ("\n");
+            }
          }
          output.append ("\n");
       });
@@ -2300,43 +2477,53 @@ public class GaitModel extends RootModel {
          .append ("\n%%PROBES%%\n")
          .append (
             "%%------------------------------------------------------------%%\n")
-         .append ("\nCONTROLLER INFORMATION\n").append ("Use motion targets : ")
-         .append (controller.getMotionTargetTerm ().isEnabled ()).append ("\n")
+         .append ("\nTRACKING CONTROLLER INFORMATION\n")
+         .append ("Performed IK at startup: ").append (myUseIK).append ("\n")
          .append ("Use KKT Factorization: ")
          .append (controller.getUseKKTFactorization ()).append ("\n")
          .append ("Incremental computation: ")
          .append (controller.getComputeIncrementally ()).append ("\n")
          .append ("Use timestep scaling: ")
          .append (controller.getUseTimestepScaling ()).append ("\n")
-         .append ("Integrator: ").append (controller.getIntegrator ())
-         .append ("\n\n");
-      // Calculate framerate of the marker trajectories
-      double framerate =
-         (motion.numFrames () - 1)
-         / motion.getFrameTime (motion.numFrames () - 1);
+         .append ("Normalize cost terms: ")
+         .append (controller.getNormalizeCostTerms ()).append ("\n");
+      // Motion Target Term
+      MotionTargetTerm mTerm = controller.getMotionTargetTerm ();
       output
-         .append (
-            String
-               .format (
-                  "TRC File: %d, start time: %.3f, stop time: %.3f, frame rate: %.2f%n",
-                  motion.numFrames (), motion.getFrameTime (0),
-                  motion.getFrameTime (motion.numFrames () - 1), framerate));
-      // Calculate framerate of the force data
-      framerate =
-         (forces.numFrames () - 1)
-         / forces.getFrameTime (forces.numFrames () - 1);
+         .append ("\nMOTION TARGET TERM INFORMATION\n").append ("Weight: ")
+         .append (mTerm.getWeight ()).append ("\n")
+         .append ("Use legacy control: ").append (mTerm.getLegacyControl ())
+         .append ("\n").append ("Use PD control: ")
+         .append (mTerm.getUsePDControl ()).append ("\n")
+         .append ("Chase Time: ").append (mTerm.getChaseTime ()).append ("\n")
+         .append ("KD: ").append (mTerm.getKd ()).append ("\n").append ("KP: ")
+         .append (mTerm.getKp ()).append ("\n");
+      // Damping Term
+      DampingTerm dTerm = controller.getExcitationDampingTerm ();
       output
-         .append (
-            String
-               .format (
-                  "MOT File: %d, start time: %.3f, stop time: %.3f, frame rate: %.2f%n",
-                  forces.numFrames (), forces.getFrameTime (0),
-                  forces.getFrameTime (forces.numFrames () - 1), framerate));
+         .append ("\nDAMPING TERM INFORMATION\n").append ("Enabled: ")
+         .append (dTerm.isEnabled ()).append ("\n").append ("Weight: ")
+         .append (dTerm.getWeight ()).append ("\n");
+      // L2Regularization Term
+      L2RegularizationTerm lTerm = controller.getL2RegularizationTerm ();
+      output
+         .append ("\nL2REGULARIZATION TERM INFORMATION\n").append ("Enabled: ")
+         .append (lTerm.isEnabled ()).append ("\n").append ("Weight: ")
+         .append (lTerm.getWeight ()).append ("\n");
+      // Used Targets
+      String useFrameTargets =
+         (mTerm.getTargetFrames ().size () != 0) ? "true" : "false";
+      String usePointTargets =
+         (mTerm.getTargetPoints ().size () != 0) ? "true" : "false";
+      output
+         .append ("\nTARGET INFORMATION\n").append ("Use Frame Targets: ")
+         .append (useFrameTargets).append ("\n").append ("Use Point Targets: ")
+         .append (usePointTargets).append ("\n");
       output
          .append ("Model markers: ").append (marker.size ()).append ("\t")
          .append ("Assigned experimental markers: ")
          .append (motion.numMarkers ()).append ("\n");
-      // Formatting table header
+      // Marker information
       String header =
          String
             .format (
@@ -2345,31 +2532,64 @@ public class GaitModel extends RootModel {
       output.append (header).append ("\n");
       // Add marker pairs
       marker.forEach (mkr -> {
-         // Entry<String,Double> entry = map.get (mkr.getName ());
          try {
             String label = map.getExpLabelFromModel (mkr.getName ());
-            if (label == null) {
-               output
-                  .append (
-                     String
-                        .format (
-                           "%-16s%-46s%n", mkr.getName (),
-                           "No corresponding experimental marker detected."));
-            }
-            else {
-               output
-                  .append (
-                     String
-                        .format (
-                           "%-16s%-16s%-16s%.1f%n", mkr.getName (), label,
-                           mkr.getFrame ().getName (),
-                           map.getMarkerWeight (label)));
-            }
+            String appendix =
+               (label == null)
+                  ? String
+                     .format (
+                        "%-16s%-46s%n", mkr.getName (),
+                        "No corresponding experimental marker detected.")
+                  : String
+                     .format (
+                        "%-16s%-16s%-16s%.1f%n", mkr.getName (), label,
+                        mkr.getFrame ().getName (),
+                        map.getMarkerWeight (label));
+            output.append (appendix);
          }
          catch (Exception e) {
             e.printStackTrace ();
          }
       });
+      output.append ("\nPROBE INFORMATION\n");
+      // Calculate framerates for marker and force data
+      double framerate =
+         (motion.numFrames () - 1)
+         / motion.getFrameTime (motion.numFrames () - 1);
+      String trcFormat =
+         "TRC File: %d, start time: %.3f, stop time: %.3f, frame rate: %.2f%n";
+      output
+         .append (
+            String
+               .format (
+                  trcFormat, motion.numFrames (), motion.getFrameTime (0),
+                  motion.getFrameTime (motion.numFrames () - 1), framerate));
+      framerate =
+         (forces.numFrames () - 1)
+         / forces.getFrameTime (forces.numFrames () - 1);
+      String forceFormat =
+         "MOT File: %d, start time: %.3f, stop time: %.3f, frame rate: %.2f%n";
+      output
+         .append (
+            String
+               .format (
+                  forceFormat, forces.numFrames (), forces.getFrameTime (0),
+                  forces.getFrameTime (forces.numFrames () - 1), framerate));
+      // List all input probes
+      ComponentList<Probe> iProbes = getInputProbes ();
+      output
+         .append ("Generated ").append (iProbes.size ())
+         .append (" input probes from trc and mot file(s)").append ("\n");
+      header = String.format ("%-32s%-22s%-8s", "Name", "Type", "Enabled");
+      output.append (header).append ("\n");
+      for (Probe probe : iProbes) {
+         String appendix =
+            String
+               .format (
+                  "%-32s%-22s%-6s%n", probe.getName (),
+                  probe.getClass ().getSimpleName (), probe.isActive ());
+         output.append (appendix);
+      }
    }
 
    /**
