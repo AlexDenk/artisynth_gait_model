@@ -1,0 +1,1 @@
+Model	Experimental	Weightr_acromion	r_acromion	1.0r_humerus_epicondyle	r_humerus_epicondyle	1.0r_radius_styloid	r_radius_styloid	1.0
