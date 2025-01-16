@@ -212,7 +212,7 @@ public class GaitModel extends RootModel {
       // Rendering utility variables for scaling and positioning
       protected double myScale;
       protected Vector3d copPos = new Vector3d (0, 0, 0);
-      protected Vector3d grfPos = new Vector3d (0, 0, 0);
+      protected Vector3d grfEndPos = new Vector3d (0, 0, 0);
 
       public MomentArmFunction (Frame frame, String side, double s) {
          this.myFrame = frame;
@@ -238,15 +238,14 @@ public class GaitModel extends RootModel {
       @Override
       public void eval (VectorNd vec, double t, double trel) {
          Vector3d ref = myFrame.getPosition ();
-         int frame = myForces.getFrame (t);
+         int tframe = myForces.getFrame (t);
          // calculate moment arm from current calcn position to cop
-         copPos = myForces.getData (frame, mySide + " COP");
+         copPos = myForces.getData (tframe, mySide + " COP");
          Vector3d arm = new Vector3d ();
          arm.sub (copPos, ref);
          // calculate resulting moment
          Vector3d grf = new Vector3d ();
          vec.getSubVector (new int[] { 0, 1, 2 }, grf);
-         grfPos.scaledAdd (0.001 * myScale, grf, copPos);
          Vector3d grm = new Vector3d ();
          vec.getSubVector (new int[] { 3, 4, 5 }, grm);
          Vector3d momRes = new Vector3d ();
@@ -258,8 +257,10 @@ public class GaitModel extends RootModel {
                vec.get (0), vec.get (1), vec.get (2), momRes.x, momRes.y,
                momRes.z);
          myFrame.setExternalForce (wrench);
-         // add wrench to message file
+         // write wrench to message file
          writeToFile (wrench);
+         // calculate endpoint of grf vector for rendering
+         grfEndPos.scaledAdd (0.001 * myScale, grf, copPos);
       }
 
       private void writeToFile (Wrench wrench) {
@@ -280,10 +281,10 @@ public class GaitModel extends RootModel {
       @Override
       public void render (Renderer renderer, int flags) {
          if (!copPos.equals (new Vector3d (0, 0, 0))
-         || !grfPos.equals (new Vector3d (0, 0, 0))) {
+         || !grfEndPos.equals (new Vector3d (0, 0, 0))) {
             renderer.setColor (Color.GRAY.brighter ());
             renderer.drawSphere (copPos, 0.01 * myScale);
-            renderer.drawArrow (copPos, grfPos, 0.01 * myScale, false);
+            renderer.drawArrow (copPos, grfEndPos, 0.01 * myScale, false);
          }
       }
 
@@ -381,9 +382,9 @@ public class GaitModel extends RootModel {
       addModel (myMech);
       setSimulationProperties ();
       initializeOsim (myName, myScale);
+      initializeIOProbes (myName, myScale);
       CollisionManager collMan = myMech.getCollisionManager ();
       setContactProps (collMan, myName);
-      initializeIOProbes (myName, myScale);
       setRenderProps (collMan, myScale);
       writeInputToFile (myName);
    }
@@ -590,9 +591,8 @@ public class GaitModel extends RootModel {
     * if there's an issue writing to the file
     */
    public void writeInputToFile (String myName) throws IOException {
-      if (!(myName instanceof String)) {
+      if (!(myName instanceof String))
          throw new IllegalArgumentException ("Input must be of type String");
-      }
       String inputName = myName + "/Output/" + myName + "_input_file.txt";
       String inputPath =
          ArtisynthPath.getSrcRelativePath (this, inputName).toString ();
@@ -623,15 +623,13 @@ public class GaitModel extends RootModel {
          writeFEMInfo (output, myMeshes);
          TrackingController controller =
             (TrackingController)getControllers ().get ("Motion controller");
-         if (controller != null) {
+         if (controller != null)
             writeProbesInfo (
                output, controller, myMotion, myMap, myForces, myMarkers);
-         }
          CollisionManager coll = myMech.getCollisionManager ();
          CollisionBehaviorList behav = coll.behaviors ();
-         if (coll != null) {
+         if (coll != null)
             writeContactInfo (output, coll, behav);
-         }
          writer.print (output.toString ());
       }
       catch (IOException ex) {
@@ -719,25 +717,24 @@ public class GaitModel extends RootModel {
     */
    private void addExcitersToController (TrackingController controller) {
       // Muscles
-      controller.addExciters (myMuscles);
+      //controller.addExciters (myMuscles);
       // Frame Exciters
       HashSet<String> bodyNames = new HashSet<> ();
-      //bodyNames.add ("torso");
+      bodyNames.add ("torso");
       bodyNames.add ("pelvis");
-      //bodyNames.add ("femur_r");
-      //bodyNames.add ("femur_l");
-      //bodyNames.add ("tibia_r");
-      //bodyNames.add ("tibia_l");
-      //bodyNames.add ("talus_r");
-      //bodyNames.add ("talus_l");
+      bodyNames.add ("femur_r");
+      bodyNames.add ("femur_l");
+      bodyNames.add ("tibia_r");
+      bodyNames.add ("tibia_l");
+      bodyNames.add ("talus_r");
+      bodyNames.add ("talus_l");
       bodyNames.add ("calcn_r");
       bodyNames.add ("calcn_l");
-      //bodyNames.add ("toes_r");
-      //bodyNames.add ("toes_l");
+      bodyNames.add ("toes_r");
+      bodyNames.add ("toes_l");
       myBodies.forEach (body -> {
-         if (!bodyNames.contains (body.getName ())) {
+         if (!bodyNames.contains (body.getName ()))
             return;
-         }
          if (body.getMass () == 0)
             return;
          double maxForce;
@@ -809,7 +806,6 @@ public class GaitModel extends RootModel {
       createForceInputProbe (forces, calcnR, "Right", start, stop, scale);
       RigidBody calcnL = myBodies.get ("calcn_l");
       createForceInputProbe (forces, calcnL, "Left", start, stop, scale);
-
    }
 
    /**
@@ -951,7 +947,8 @@ public class GaitModel extends RootModel {
     * if one or multiple files don't exist
     */
    private void addPointTargetsAndProbes (
-      TrackingController controller, MarkerMapping map, MarkerMotionData motion, double start, double stop)
+      TrackingController controller, MarkerMapping map, MarkerMotionData motion,
+      double start, double stop)
       throws IOException {
       if (motion == null || map == null)
          return;
@@ -974,7 +971,8 @@ public class GaitModel extends RootModel {
       }
       // Add the default MarkerMotionData prior to IK solving
       NumericInputProbe targetProbe =
-         collectMarkerMotionData (controller, targets, motion, map, start, stop);
+         collectMarkerMotionData (
+            controller, targets, motion, map, start, stop);
       addInputProbe (targetProbe);
       if (myUseIK) {
          // Generate achievable target positions by IK
@@ -1008,8 +1006,7 @@ public class GaitModel extends RootModel {
       TrackingController controller, ArrayList<FrameMarker> targets,
       MarkerMotionData motion, MarkerMapping map, double start, double stop) {
       NumericInputProbe targetProbe =
-         InverseManager
-            .createInputProbe (
+         InverseManager.createInputProbe (
                controller, ProbeID.TARGET_POSITIONS, null, start, stop);
       VectorNd positions = new VectorNd (3 * targets.size ());
       for (int i = 0; i < motion.numFrames (); i++) {
@@ -1130,7 +1127,6 @@ public class GaitModel extends RootModel {
          double[] coord = new double[1];
          coord[0] = coords.getData (i, prop);
          angle.addData (time, coord);
-
       }
       angle.setActive (true);
       addInputProbe (angle);
@@ -1162,7 +1158,6 @@ public class GaitModel extends RootModel {
       Main.getMain ().getViewer ().addRenderable (momentArm);
       grf.setDataFunction (momentArm);
       grf.setVsize (6);
-      
       for (int i = 0; i < forces.getFrame (stop); i++) {
          VectorNd force = new VectorNd (6);
          double time = forces.getFrameTime (i);
@@ -1227,8 +1222,7 @@ public class GaitModel extends RootModel {
       ModelComponent comp, ControlPanel panel, String prop, double start,
       double stop, double step) {
       String filepath =
-         PathFinder
-            .getSourceRelativePath (
+         PathFinder.getSourceRelativePath (
                this, "/" + myName + "/Output/" + comp.getName () + " " + prop
                + ".txt");
       NumericOutputProbe probe =
@@ -1259,8 +1253,7 @@ public class GaitModel extends RootModel {
       int wsize = (int)(0.21 / getMaxStepSize ());
       velProbe.smoothWithSavitzkyGolay (wsize, 4);
       velProbe.setActive (true);
-      System.out
-         .println (
+      System.out.println (
             "Generated velocity input probes based on marker trajectories");
       return velProbe;
    }
@@ -1275,14 +1268,14 @@ public class GaitModel extends RootModel {
    private RenderableComponentList<RigidBody> getBodiesFromOsim () {
       myBodies = (RenderableComponentList<RigidBody>)myMech.get ("bodyset");
       // Check for unclosed meshes
-      myBodies.forEach (b -> {
-         PolygonalMesh mesh = b.getCollisionMesh ();
-         if (!mesh.isClosed ()) {
-            System.out.print (b.getName () + ": read ");
-            System.out.print (mesh.getFaces ().size () + " faces. ");
-            System.out.println ("Warning: Mesh not closed.");
-         }
-      });
+      //myBodies.forEach (b -> {
+      //   PolygonalMesh mesh = b.getCollisionMesh ();
+      //   if (!mesh.isClosed ()) {
+      //      System.out.print (b.getName () + ": read ");
+      //      System.out.print (mesh.getFaces ().size () + " faces. ");
+      //      System.out.println ("Warning: Mesh not closed.");
+      //   }
+      //});
       return myBodies;
    }
 
@@ -1301,7 +1294,6 @@ public class GaitModel extends RootModel {
       if (myMech.contains (myMech.get ("jointset"))) {
          System.out.println ("Generated joint constraints from jointset.");
          joints = getJointsFromJointset (comp);
-
       }
       else {
          System.out
@@ -1309,9 +1301,9 @@ public class GaitModel extends RootModel {
                "Generated joint constraints from ridig body connectors.");
          joints = getJointsFromBodyset (comp);
       }
-      ComponentUtils
-         .deleteComponentAndDependencies (
-            myMech.findComponent ("jointset/ground_pelvis"));
+      //ComponentUtils
+      //   .deleteComponentAndDependencies (
+      //      myMech.findComponent ("jointset/ground_pelvis"));
       return joints;
    }
 
@@ -1332,9 +1324,8 @@ public class GaitModel extends RootModel {
       // Ground shares no joint with any rigid body else than the hip
       // so skip that, since hip is going to be addressed either way.
       myBodies.forEach (rb -> {
-         if (rb.getName ().equals ("ground")) {
+         if (rb.getName ().equals ("ground")) 
             return;
-         }
          else {
             // Write all joints to a joint list
             myJoints.add ((JointBase)rb.getConnectors ().get (0));
@@ -1625,17 +1616,19 @@ public class GaitModel extends RootModel {
       // Overwrite attachments for toe markers, since attached to calcanei
       myMarkers.forEach (m -> {
          RigidBody newFrame = null;
+         RigidBody oldFrame = null;
          Vector3d newRef;
          Vector3d pos;
          if (m.getName ().contains ("R_Toe")) {
             newFrame = myBodies.get ("toes_r");
+            oldFrame = (RigidBody)m.getFrame ();
          }
          else if (m.getName ().contains ("L_Toe")) {
             newFrame = myBodies.get ("toes_l");
+            oldFrame = (RigidBody)m.getFrame ();
          }
-         else {
+         else
             return;
-         }
          Point3d newLoc = new Point3d (0, 0, 0);
          newRef = (Vector3d)newFrame.getPosition ();
          pos = (Vector3d)m.getPosition ();
@@ -1648,8 +1641,8 @@ public class GaitModel extends RootModel {
          m.setLocation (newLoc);
          System.out
             .println (
-               "Warning: Attachment adjusted for: " + m.getName () + " to: "
-               + newFrame.getName ());
+               "Warning: Attachment adjusted for " + m.getName () + " from "
+               + oldFrame.getName () + " to " + newFrame.getName ());
       });
       return myMarkers;
    }
@@ -1669,9 +1662,8 @@ public class GaitModel extends RootModel {
       }
       ArrayList<MuscleComponent> muscles = new ArrayList<> ();
       for (MuscleComponent msc : myMuscles) {
-         if (muscleNames.contains (msc.getName ())) {
+         if (muscleNames.contains (msc.getName ()))
             muscles.add (msc);
-         }
       }
       return muscles;
    }
@@ -1690,9 +1682,8 @@ public class GaitModel extends RootModel {
          (RenderableComponentList<ModelComponent>)myMech.get ("forceset");
       forces.forEach (frc -> {
          frc.getChildren ().forEachRemaining (obj -> {
-            if (obj instanceof PointList) {
+            if (obj instanceof PointList)
                return;
-            }
             if (obj instanceof MuscleComponent) {
                MuscleComponent muscle = (MuscleComponent)obj;
                muscle.setExcitation (0.0);
@@ -1808,9 +1799,8 @@ public class GaitModel extends RootModel {
    private CoordinateData readCoordsFile (String name) throws IOException {
       String motName = name + "/Input/" + name + "_angles.mot";
       File motFile = ArtisynthPath.getSrcRelativeFile (this, motName);
-      if (!motFile.exists () || motFile.isDirectory ()) {
+      if (!motFile.exists () || motFile.isDirectory ())
          return null;
-      }
       MOTReader motReader = new MOTReader (motFile);
       motReader.readData ();
       // Print reading details to the console
@@ -1838,9 +1828,8 @@ public class GaitModel extends RootModel {
    private ForceData readForceFile (String name) throws IOException {
       String motName = name + "/Input/" + name + "_forces.mot";
       File motFile = ArtisynthPath.getSrcRelativeFile (this, motName);
-      if (!motFile.exists () || motFile.isDirectory ()) {
+      if (!motFile.exists () || motFile.isDirectory ())
          return null;
-      }
       // Specify plate and movement direction upon first contact
       String side = "right";
       int num = 1;
@@ -1873,9 +1862,8 @@ public class GaitModel extends RootModel {
    private MarkerMapping readMarkerFile (String name) throws IOException {
       String mapName = name + "/Input/" + name + "_markers.txt";
       File mapFile = ArtisynthPath.getSrcRelativeFile (this, mapName);
-      if (!mapFile.exists () || mapFile.isDirectory ()) {
+      if (!mapFile.exists () || mapFile.isDirectory ())
          return null;
-      }
       BufferedReader reader = new BufferedReader (new FileReader (mapFile));
       ArrayList<String> modelLabels = new ArrayList<String> ();
       ArrayList<String> expLabels = new ArrayList<String> ();
@@ -1947,9 +1935,8 @@ public class GaitModel extends RootModel {
       throws IOException {
       String trcName = name + "/Input/" + name + "_positions.trc";
       File trcFile = ArtisynthPath.getSrcRelativeFile (this, trcName);
-      if (!trcFile.exists () || trcFile.isDirectory ()) {
+      if (!trcFile.exists () || trcFile.isDirectory ()) 
          return null;
-      }
       CustomTRCReader trcReader = new CustomTRCReader (trcFile, map);
       trcReader.readData ();
       System.out
@@ -1964,9 +1951,10 @@ public class GaitModel extends RootModel {
       if (trcReader.getUnits ().equals ("mm")) {
          for (int i = 0; i <= motion.numFrames () - 1; i++) {
             motion.getMarkerPositions (i).forEach (p -> {
-               p.x = p.x * scale / 1000;
-               p.y = p.y * scale / 1000;
-               p.z = p.z * scale / 1000;
+               Vector3d buf = new Vector3d (p.x, p.y, p.z);
+               p.x = buf.x * scale / 1000;
+               p.y = buf.y * scale / 1000;
+               p.z = buf.z * scale / 1000;
             });
          }
       }
@@ -2136,8 +2124,7 @@ public class GaitModel extends RootModel {
          AxialMaterial mat = mc.getMaterial ();
          if (mat instanceof EquilibriumAxialMuscle) {
             EquilibriumAxialMuscle emat = (EquilibriumAxialMuscle)mat;
-            mc
-               .setMaterial (
+            mc.setMaterial (
                   new SimpleAxialMuscle (0, 0, 3 * emat.getMaxIsoForce ()));
          }
       }
@@ -2151,7 +2138,8 @@ public class GaitModel extends RootModel {
       // Solver properties
       MechSystemSolver.setHybridSolvesEnabled (false);
       MechSystemSolver solver = myMech.getSolver ();
-      // needs to be here as well, since otherwise wrong in the input.txt
+      // if not coded separately, the hybrid solves prop is wrong in the
+      // input.txt
       solver.setHybridSolve (false);
       solver.setIntegrator (Integrator.ConstrainedBackwardEuler);
       solver.setStabilization (PosStabilization.GlobalStiffness);
@@ -2160,10 +2148,7 @@ public class GaitModel extends RootModel {
       setMaxStepSize (1e-2);
       // setAdaptiveStepping (true);
       // Damping properties
-      // myMech.setFrameDamping ();
-      // myMech.setRotaryDamping (5.0);
       myMech.setInertialDamping (3.0);
-      // myMech.setPointDamping (10.0);
       // Define scale (mm = 1000, or m = 1)
       myScale = 1.0;
       myMech.setGravity (new Vector3d (0, -9.81, 0));
@@ -2251,14 +2236,12 @@ public class GaitModel extends RootModel {
             .append (material.getYoungsModulus ()).append ("\tN/m^2\n")
             .append ("Poisson's ratio: ").append (material.getPoissonsRatio ())
             .append ("\n");
-
          PointList<FemNode3d> nodes = mesh.getNodes ();
          nodes.forEach (n -> {
             output
                .append (n.getNumber ()).append ("\t")
                .append (n.getPosition ().toString ("%.3f")).append ("\n");
          });
-
          ArrayList<FemElement3dBase> elements = mesh.getAllElements ();
          elements.forEach (elem -> {
             output.append (elem.getNumber ()).append ("\t");
@@ -2344,9 +2327,8 @@ public class GaitModel extends RootModel {
       output.append ("\n");
       // append individual info for each body
       bodies.forEach (rb -> {
-         if (rb.getName ().equals ("ground")) {
+         if (rb.getName ().equals ("ground")) 
             return;
-         }
          output
             .append (rb.getName () + "\t")
             .append (String.format ("%.3f", rb.getMass ())).append ("\tkg\n");
