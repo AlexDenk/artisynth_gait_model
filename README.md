@@ -1,10 +1,11 @@
+
 # OpenSim-based full-body multibody model built in Artisynth
-This repository holds the current state of a full-body model based on the gait2392.osim model in OpenSim. The model was built using the freely available 3D modelling platform [ArtiSynth](https://www.artisynth.org/Main/HomePage). Additional artisynth models published by the developers can be found here: [artisynth_models](https://github.com/artisynth/artisynth_models). 
+This repository holds the current state of a full-body model based on the OpenSim model published by [Tim Dorn](https://simtk.org/frs/?group_id=433). The model was built using the freely available 3D modelling platform [ArtiSynth](https://www.artisynth.org/Main/HomePage). Additional artisynth models published by the developers can be found here: [artisynth_models](https://github.com/artisynth/artisynth_models). 
 
 The model is intended for combined multi-body and finite element simulations and contains contact and constraint definitions.
 
 If you use the model or parts of it in your research, please cite the following reference:
-> Denk A., Kowalczyk W., 2024, OpenSim-based full-body multibody model built in Artisynth, GitHub repository (https://github.com/AlexDenk/artisynth_models).
+> Denk A., Kowalczyk W., Lower limb multibody model built in ArtiSynth for the use of coupled multibody-finite element simulations, in Book of Abstracts of the 95th Annual Meeting of the Association of Applied Mathematics and Mechanics, April 7th – April 11th, 2025 Poznan (Poland), pp. 74-75.
 
 ![General model overview](Gait2392_Demo.gif)
 
