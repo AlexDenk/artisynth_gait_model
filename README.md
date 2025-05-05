@@ -16,7 +16,7 @@ The image shows the generated multibody model controlled by experimental marker 
 ## What this repository includes
 * The Java class of this model
 * Additional Java classes to read and process all related files
-* The [Plug-in Gait model]((https://simtk.org/frs/?group_id=433)) using the Plug-in Gait full body markerset from Vicon Nexus and all necessary geometries.
+* The [Plug-in Gait model](https://simtk.org/frs/?group_id=433) using the Plug-in Gait full body markerset from Vicon Nexus and all necessary geometries.
 * Two experimental datasets named plugingait01 and plugingait02 both containing experimental marker trajectories and ground reaction forces of one subject (m., 35 years, 70 kg).
 
 ## License
