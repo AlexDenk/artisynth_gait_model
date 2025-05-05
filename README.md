@@ -9,12 +9,12 @@ If you use the model or parts of it in your research, please cite the following 
 
 ![General model overview](Gait2392_Demo.gif)
 
-The image shows the generated multibody model controlled by Inverse Kinematics. Notice, that the ground-pelvis joint was removed in this model, since it is unnecessary in Artisynth. Ground reaction forces are available, but incorporation is still under development.
+The image shows the generated multibody model controlled by experimental marker trajectories and forces. Experimental forces are applied to the calcaneus. The inverse simulation solves for muscle activations, that lead to the observed movement.
 
 ![Inverse Simulation overview](Gait2392_Demo.png)
 
 ## What this repository includes
-* The [gait2392 model](src/artisynth/models/diss) and all necessary geometries.
+* The [Plug-in Gait model](src/artisynth/models/diss) and all necessary geometries.
 * A modified version of the gait2392 model including upper extremities and using the Plug-in Gait full body markerset from Vicon Nexus.
 * The packages to read and process .mot files including an updated TRC-Reader
 * Exemplary motion-capturing data from tutorial 1 of the [gait2392](https://simtk.org/frs/?group_id=91) model (Delp, S.L., Anderson, F.C., Arnold, A.S., Loan, P., Habib, A., John, C.T., Guendelman, E., Thelen, D.G. OpenSim: Open-source software to create and analyze dynamic simulations of movement. IEEE Transactions on Biomedical Engineering, 54(11), pp 1940-1950. (2007)).
