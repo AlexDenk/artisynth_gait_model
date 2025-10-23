@@ -25,8 +25,8 @@ public class MOTReader {
    protected CoordinateData myCoords = new CoordinateData ();
    protected boolean coordsInDegrees;
    protected boolean forcesInDegrees;
-   protected String myp1ContactSide;
-   protected int myp1ContactPlate;
+   protected String myP1ContactSide;
+   protected int myP1ContactPlate;
 
    // ------------------------------Constructors-------------------------------
    public MOTReader () {
@@ -38,8 +38,8 @@ public class MOTReader {
 
    public MOTReader (InputStream is, String side, int num) {
       myIstream = is;
-      myp1ContactSide = side.toLowerCase ();
-      myp1ContactPlate = num;
+      myP1ContactSide = side.toLowerCase ();
+      myP1ContactPlate = num;
    }
 
    public MOTReader (File file, String side, int num) throws IOException {
@@ -224,8 +224,8 @@ public class MOTReader {
       Set<String> labels = new LinkedHashSet<String> ();
       // Assign plates 1 and 2 to left or right side each
       String p1 =
-         (myp1ContactSide.equals ("right") && myp1ContactPlate == 1)
-         || (myp1ContactSide.equals ("left") && myp1ContactPlate == 2) ? "Right"
+         (myP1ContactSide.equals ("right") && myP1ContactPlate == 1)
+         || (myP1ContactSide.equals ("left") && myP1ContactPlate == 2) ? "Right"
             : "Left";
       String p2 = p1.equals ("Right") ? "Left" : "Right";
       // Combine each column header triple (x,y,z) to a single

@@ -10,8 +10,6 @@ import artisynth.core.mechmodels.CollisionResponse;
 import artisynth.core.mechmodels.CollisionResponseList;
 import artisynth.core.mechmodels.ContactData;
 import artisynth.core.modelbase.MonitorBase;
-import artisynth.core.util.ArtisynthPath;
-import artisynth.models.gait_model.Tests.GaitModel;
 
 /**
  * The contact monitor acts as a monitor (see artisynth manual for further

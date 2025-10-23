@@ -7,10 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.Map.Entry;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -22,7 +20,7 @@ import artisynth.core.femmodels.FemModel.Ranging;
 import artisynth.core.femmodels.FemModel.SurfaceRender;
 import artisynth.core.gui.ControlPanel;
 import artisynth.core.inverse.*;
-import artisynth.core.inverse.FrameExciter.WrenchDof;
+import artisynth.core.inverse.CoordinateActuator;
 import artisynth.core.inverse.InverseManager.ProbeID;
 import artisynth.core.materials.*;
 import artisynth.core.mechmodels.*;
@@ -38,7 +36,6 @@ import artisynth.core.renderables.ColorBar;
 import artisynth.core.util.ArtisynthPath;
 import artisynth.core.workspace.RootModel;
 import artisynth.models.gait_model.*;
-
 import maspack.geometry.*;
 import maspack.interpolation.Interpolation;
 import maspack.matrix.*;
@@ -51,7 +48,7 @@ import maspack.spatialmotion.Wrench;
 import maspack.util.*;
 
 /**
- * @author Alexander Denk Copyright (c) 2023-2024 <br>
+ * @author Alexander Denk Copyright (c) 2023 <br>
  * (UDE) University of Duisburg-Essen <br>
  * Chair of Mechanics and Robotics <br>
  * alexander.denk@uni-due.de
@@ -59,34 +56,44 @@ import maspack.util.*;
 
 public class GaitModel extends RootModel {
    // ----------------------------Instance Fields-------------------------------
+   // Current mechmodel
+   MechModel myMech = new MechModel ();
    // All rigid bodies in the model
    RenderableComponentList<RigidBody> myBodies = null;
-   // Calculated generalized joint angles
-   CoordinateData myCoords;
-   // Experimental force data
-   ForceData myForces;
    // A list of all joints in the model
    RenderableComponentList<JointBase> myJoints;
    // All markers in the model
    RenderableComponentList<FrameMarker> myMarkers = null;
-   // Current mechmodel
-   MechModel myMech = new MechModel ();
    // All finite element meshes in the model
    List<FemModel3d> myMeshes = new ArrayList<FemModel3d> ();
+   // A list of each muscle in the model
+   List<MuscleComponent> myMuscles = new ArrayList<MuscleComponent> ();
+   
    // Experimental and model marker names and weights
    MarkerMapping myMap;
    // Experimental marker trajectories
-   MarkerMotionData myMotion;
-   // A list of each muscle in the model
-   List<MuscleComponent> myMuscles = new ArrayList<MuscleComponent> ();
+   MarkerMotionData myMotion;  
+   // Calculated generalized joint angles
+   CoordinateData myCoords;
+   // Experimental force data
+   ForceData myForces;
+
    // Name of the current working directory
    String myName = null;
    // Scale of the model.
    double myScale;
-   // Used to track whether inverse kinematics is used
-   boolean myUseIK = true;
-   // Used to track whether ground reaction forces are used
+   // Used to flag whether model runs in debug mode
+   boolean myDebug = true;
+   // Used to flag whether inverse kinematics is used during forward dynamics
+   boolean myFilterWithIK = true;
+   // Used to flag whether model runs on IK
+   boolean myUseIK = false;
+   // Used to flag whether model runs only with coordinate actuators
+   boolean myUseCAsSolely = false;
+   // Used to flag whether ground reaction forces are used during forward
+   // dynamics
    boolean myUseGRF = true;
+   
    // Arrays of grouped muscles, sorted by location and function
    String[] gluts =
       new String[] { "glut_med1_r",
@@ -196,9 +203,28 @@ public class GaitModel extends RootModel {
                      "ercspn_r",
                      "extobl_l",
                      "intobl_l",
-                     "ercspn_l"};
+                     "ercspn_l" };
+
    // ----------------------------Nested classes--------------------------------
-   public class MomentArmFunction
+   /**
+    * Subclass to provide a data function for {@link NumericControlProbe}s that
+    * computes the current ground reaction moment with respect to both calcanei
+    * frames. The computed wrench is applied to both frames and written to a
+    * seperate output file. Current ground reaction forces are rendered with a
+    * scale of 1/1000 at the current application point, i.e. both calcanei
+    * frames. Current ground reaction moments are computes as:
+    * <p>
+    * {@code M = s x F + T} with:
+    * <p>
+    * <table summary="">
+    * <tbody>
+    *   <tr><td>s</td><td>Distance vector between force plate COP and calcanei frame</td></tr>
+    *   <tr><td>F</td><td>Ground reaction force from force plate</td></tr>
+    *   <tr><td>T</td><td>Ground reaction moment from force plate</td></tr>
+    * </tbody>
+    * </table>
+    */
+   public class GroundReactionMomentFunction
    implements DataFunction, Clonable, IsRenderable {
       // Frame used for moment arm calculation
       protected Frame myFrame;
@@ -215,7 +241,7 @@ public class GaitModel extends RootModel {
       protected Vector3d copPos = new Vector3d (0, 0, 0);
       protected Vector3d grfEndPos = new Vector3d (0, 0, 0);
 
-      public MomentArmFunction (Frame frame, String side, double s) {
+      public GroundReactionMomentFunction (Frame frame, String side, double s) {
          this.myFrame = frame;
          this.mySide = side;
          this.myScale = s;
@@ -299,58 +325,152 @@ public class GaitModel extends RootModel {
       }
    }
 
-   public class JointMomentFunction implements DataFunction, Clonable {
-      JointBase myJoint;
-      String myJointConstraint;
-      double myMass;
+   /**
+    * Subclass to provide a data function for {@link NumericMonitorProbe}s that
+    * computes the current generated force of any {@link ExcitationComponent}
+    * with the property excitation and maxforce. Current exciter force is
+    * computed as:
+    * <p>
+    * {@code f = a*f_max}
+    */
+   public class ExciterForceFunction implements DataFunction, Clonable {
+      CoordinateActuator myExciter;
 
-      public JointMomentFunction (JointBase joint, String constraint) {
-         this.myJoint = joint;
-         this.myJointConstraint = constraint;
-         this.myMass = myMech.getActiveMass ();
+      public ExciterForceFunction (ExcitationComponent e) {
+         this.myExciter = (CoordinateActuator)e;
       }
 
       public Object clone () throws CloneNotSupportedException {
          return super.clone ();
       }
 
+      @Override
       public void eval (VectorNd vec, double t, double trel) {
-         Vector3d uniBufInA = myJoint.getUnilateralForceInA ().m;
-         Vector3d biBufInA = myJoint.getBilateralForceInA ().m;
-         VectorNd mom = new VectorNd (1);
-         switch (myJoint.getName ()) {
-            case "back":
-               if (myJointConstraint.contains ("extension"))
-                  mom.set (0, biBufInA.z + uniBufInA.z);
-               if (myJointConstraint.contains ("bending"))
-                  mom.set (0, biBufInA.x + uniBufInA.x);
-               if (myJointConstraint.contains ("rotation"))
-                  mom.set (0, biBufInA.y + uniBufInA.y);
-               break;
-            case "hip_r":
-            case "hip_l":
-               if (myJointConstraint.contains ("flexion"))
-                  mom.set (0, biBufInA.z + uniBufInA.z);
-               if (myJointConstraint.contains ("adduction"))
-                  mom.set (0, biBufInA.x + uniBufInA.x);
-               if (myJointConstraint.contains ("rotation"))
-                  mom.set (0, biBufInA.y + uniBufInA.y);
-               break;
-            case "knee_r":
-            case "knee_l":
-            case "ankle_r":
-            case "ankle_l":
-            case "mtp_r":
-            case "mtp_l":
-               mom.set (0, biBufInA.z + uniBufInA.z);
-               break;
-            case "subtalar_r":
-            case "subtalar_l":
-               mom.set (0, biBufInA.x + uniBufInA.x);
-               break;
+         double ex = myExciter.getExcitation ();
+         double maxForce = myExciter.getMaxForce ();
+         double[] force = new double[] { ex * maxForce };
+         vec.set (force);
+      }
+   }
+
+   /**
+    * Subclass to provide a data function for {@link NumericMonitorProbe}s that
+    * collects the bilateral body force of a joint in a certain axis and scales
+    * this force to the body weight (BW). Scaling is performed as:
+    * <p>
+    * {@code f_BW = f_abs / (g*W_B)}
+    */
+   public class JointForceFunction implements DataFunction, Clonable {
+      JointBase myJoint = null;
+
+      public JointForceFunction () {
+         this (null);
+      }
+
+      public JointForceFunction (JointBase joint) {
+         this.myJoint = joint;
+      }
+
+      @Override
+      public void eval (VectorNd vec, double t, double trel) {
+         Wrench load = myJoint.getBilateralForceInA ();
+         double fBW =
+            load.f.y / (myMech.getGravity ().norm () * myMech.getActiveMass ());
+         vec.set (0, fBW);
+      }
+
+      public Object clone () throws CloneNotSupportedException {
+         return super.clone ();
+      }
+   }
+
+   /**
+    * Subclass to provide a data function for {@link NumericMonitorProbe}s that
+    * computes the normalized fiber length of any equilibrium exciter that has
+    * the property optimalFiberLength. Normalized fiber length is computed as: 
+    * <p>
+    * {@code l_n = l_f/l_o}
+    */
+   public class NormalizedFiberLengthFunction
+   implements DataFunction, Clonable {
+      EquilibriumAxialMuscle mat;
+
+      public NormalizedFiberLengthFunction (AxialMaterial mat) {
+         this.mat = (EquilibriumAxialMuscle)mat;
+      }
+
+      public Object clone () throws CloneNotSupportedException {
+         return super.clone ();
+      }
+
+      @Override
+      public void eval (VectorNd vec, double t, double trel) {
+         double lo = mat.getOptFibreLength ();
+         double lf = mat.getMuscleLength ();
+         double[] nFibLength = new double[] { lf / lo };
+         vec.set (nFibLength);
+      }
+   }
+
+   /**
+    * Subclass to provide smoothing to {@link NumericProbeBase} objects, after
+    * all data has been collected. Smoothing is applied via a moving average
+    * with a window size of:
+    * <p>
+    * {@code wSize = 0.1 / t_max}
+    * <p>
+    * with t_max being the maximum step size of the current model.
+    */
+   public class SmoothingMonitor extends MonitorBase {
+      Map<NumericProbeBase,Double> probeMap =
+         new HashMap<NumericProbeBase,Double> ();
+      int winSize;
+
+      public SmoothingMonitor (ArrayList<NumericProbeBase> probes) {
+         for(NumericProbeBase probe : probes) {
+            Double tFinal = probe.getStopTime ();
+            probeMap.put (probe, tFinal);
          }
-         vec.add (mom);
-         // vec.scaledAdd (1 / myMass, mom);
+      }
+
+      public SmoothingMonitor () {
+         
+      }
+
+      public void add (NumericProbeBase probe) {
+         Double tFinal = probe.getStopTime ();
+         this.probeMap.put (probe, tFinal);
+      }
+
+      public ArrayList<NumericProbeBase> getAll () {
+         ArrayList<NumericProbeBase> probes =
+            new ArrayList<NumericProbeBase> ();
+         probeMap.forEach ( (key, value) -> {
+            probes.add (key);
+         });
+         return probes;
+      }
+
+      @Override
+      public void initialize (double t0) {
+         super.initialize (t0);
+         winSize = (int)(0.1 / getMaxStepSize ());
+      }
+
+      @Override
+      public void apply (double t0, double t1) {
+         // Get all probes, that end on t1
+         Set<NumericProbeBase> keys = new HashSet<NumericProbeBase> ();
+         for (Entry<NumericProbeBase,Double> entry : probeMap.entrySet ()) {
+            if (Objects.equals (t1, entry.getValue ())) {
+               keys.add (entry.getKey ());
+            }
+         }
+         // Smooth all corresponding probes
+         keys.forEach (key -> {
+            NumericProbeBase probe = key;
+            probe.smoothWithMovingAverage (winSize);
+         });
       }
    }
 
@@ -366,7 +486,7 @@ public class GaitModel extends RootModel {
    public GaitModel (String name, boolean ik, boolean grf) throws IOException {
       super (name);
       this.myName = name;
-      this.myUseIK = ik;
+      this.myFilterWithIK = ik;
       this.myUseGRF = grf;
    }
 
@@ -389,13 +509,37 @@ public class GaitModel extends RootModel {
       addModel (myMech);
       setSimulationProperties ();
       initializeOsim (myName, myScale);
-      initializeIOProbes (myName, myScale);
       CollisionManager collMan = myMech.getCollisionManager ();
       setContactProps (collMan, myName);
+      initializeIOProbes (myName, myScale);
       setRenderProps (collMan, myScale);
       writeInputToFile (myName);
    }
 
+   public boolean getDebug () {
+      return myDebug;
+   }
+
+   public boolean getFilterWithIK () {
+      return myFilterWithIK;
+   }
+   
+   public boolean getUseC() {
+      return myUseCAsSolely;
+   }
+
+   public boolean getUseGRF () {
+      return myUseGRF;
+   }
+
+   public boolean getUseIK () {
+      return myUseIK;
+   }
+
+   public double getScale () {
+      return myScale;
+   }
+   
    @Override
    public void prerender (RenderList list) {
       super.prerender (list);
@@ -480,6 +624,17 @@ public class GaitModel extends RootModel {
       RenderProps.setVisible (coll, true);
       RenderProps.setSolidArrowLines (coll, 0.01 * scale, Color.BLUE);
       RenderProps.setSphericalPoints (coll, 0.01 * scale, Color.CYAN);
+   }
+
+   /**
+    * Sets whether model is run in debug mode or not. Setting {@code debug} to
+    * {@code true} will enable debug mode, while {@code false} will disable
+    * debug mode.
+    * 
+    * @param debug
+    */
+   public void setDebugMode (boolean debug) {
+      this.myDebug = debug;
    }
 
    /**
@@ -600,6 +755,10 @@ public class GaitModel extends RootModel {
       }
    }
 
+   public void setupCoordinateActuatorRun () {
+      ComponentUtils.deleteComponentsAndDependencies (myMuscles);
+   }
+
    /**
     * Enables Inverse Kinematics for the currently active model by setting
     * dynamics and the current tracking controller instance off. Also
@@ -618,6 +777,7 @@ public class GaitModel extends RootModel {
             probe.setActive (false);
       });
    }
+   
 
    /**
     * Sets the viewer properties of the current viewer.
@@ -652,7 +812,7 @@ public class GaitModel extends RootModel {
             .append (
                "%%------------------------ INPUT FILE ------------------------%%\n")
             .append (
-               "%% Author: Alexander Denk, Copyright (c) 2024                 %%\n")
+               "%% Author: Alexander Denk, Copyright (c) 2025                 %%\n")
             .append (
                "%% (UDE) University of Duisburg-Essen                         %%\n")
             .append (
@@ -687,21 +847,81 @@ public class GaitModel extends RootModel {
 
    // --------------------------Private Instance Methods------------------------
    /**
+    * Adds output probes and panel widgets for the excitations of all exciters
+    * of the TrackingController and also max force/moment if the model is driven
+    * by frame exciters or coordinate actuators.
+    * 
+    * @param controller
+    * {@link TrackingController}
+    * @param monitor 
+    * @param start
+    * start time
+    * @param stop
+    * stop time
+    * @param step
+    * step size
+    */
+   private void addActuatorOutputProbes (
+      TrackingController controller, SmoothingMonitor monitor, double start,
+      double stop, double step) {
+      double cmcStart = 0.03;
+      ControlPanel musclePanel = new ControlPanel ("Muscle Properties");
+      controller.getExciters ().forEach (e -> {
+         if (e instanceof CoordinateActuator) {
+            if (myDebug) {
+               createExciterOutputProbe (e, monitor, cmcStart, stop, step);
+               musclePanel
+                  .addWidget (e.getName () + " excitation", e, "excitation");
+               musclePanel
+                  .addWidget (e.getName () + " maxForce", e, "maxForce");
+            }
+         }
+         else {
+            createProbeAndPanel (e, null, "forceNorm", monitor, cmcStart, stop, step);
+            //createProbeAndPanel(e, null, "muscleLength", monitor, cmcStart, stop, step);
+            musclePanel
+               .addWidget (e.getName () + " excitation", e, "excitation");
+            if (myDebug)
+               createMusFbrLgthOutputProbe (e, monitor, cmcStart, stop, step);
+         }
+      });
+      addControlPanel (musclePanel);
+   }
+
+   /**
+    * Generates a {@link NumericOutputProbe} for left and right calcaneus that
+    * tracks the generated external force by
+    * {@link GroundReactionMomentFunction}.
+    * 
+    * @param start
+    * start time
+    * @param stop
+    * stop time
+    * @param step
+    * step size
+    */
+   private void addBodyForceOutputProbes (
+      double start, double stop, double step) {
+      RigidBody calcnL = myBodies.get ("calcn_l");
+      createProbeAndPanel (
+         calcnL, null, "externalForce", null, start, stop, step);
+      RigidBody calcnR = myBodies.get ("calcn_r");
+      createProbeAndPanel (
+         calcnR, null, "externalForce", null, start, stop, step);
+   }
+
+   /**
     * Defines a tracking controller that calculates muscle activations based on
     * trajectories and sets its controller properties.
     * 
-    * @param motion
-    * {@link MarkerMotionData}
-    * @param map
-    * {@link MarkerMapping}
-    * @param name
-    * Name specifier of the current working directory
+    * @return generated tracking controller object
     */
    private TrackingController addControllerAndProps () {
       TrackingController controller =
          new TrackingController (myMech, "Motion controller");
       controller.setUseKKTFactorization (false);
-      controller.setComputeIncrementally (false);
+      controller.setComputeIncrementally (true);
+      controller.setRefactorForIncremental (false);
       controller.setExcitationDamping ();
       controller.setL2Regularization (0.001);
       // Adjust MotionTargetTerm properties
@@ -753,7 +973,7 @@ public class GaitModel extends RootModel {
    private void addErrorOutputProbes (
       TrackingController controller, double start, double stop, double step) {
       MotionTargetTerm mTerm = controller.getMotionTargetTerm ();
-      createProbeAndPanel (mTerm, null, "positionError", start, stop, step);
+      createProbeAndPanel (mTerm, null, "positionError", null, start, stop, step);
    }
 
    /**
@@ -766,51 +986,17 @@ public class GaitModel extends RootModel {
    private void addExcitersToController (TrackingController controller) {
       // Muscles
       controller.addExciters (myMuscles);
-      // Frame Exciters
-      HashSet<String> bodyNames = new HashSet<> ();
-      //bodyNames.add ("torso");
-      bodyNames.add ("pelvis");
-      //bodyNames.add ("femur_r");
-      //bodyNames.add ("femur_l");
-      //bodyNames.add ("tibia_r");
-      //bodyNames.add ("tibia_l");
-      //bodyNames.add ("talus_r");
-      //bodyNames.add ("talus_l");
-      bodyNames.add ("calcn_r");
-      bodyNames.add ("calcn_l");
-      //bodyNames.add ("toes_r");
-      //bodyNames.add ("toes_l");
-      bodyNames.add ("humerus_r");
-      bodyNames.add ("humerus_l");
-      bodyNames.add ("ulna_r");
-      bodyNames.add ("ulna_l");
-      bodyNames.add ("radius_r");
-      bodyNames.add ("radius_l");
-      bodyNames.add ("hand_r");
-      bodyNames.add ("hand_l");
-      myBodies.forEach (body -> {
-         if (!bodyNames.contains (body.getName ()))
-            return;
-         if (body.getMass () == 0)
-            return;
-         double maxForce;
-         double maxMoment;
-         double[] scale = new double[] { 1, 1, 1, 1, 1, 1 };
-         double[] weights = new double[] { 1, 1, 1, 1, 1, 1 };
-         switch (body.getName ()) {
-            case "calcn_l":
-            case "calcn_r":
-               maxForce = 100;
-               maxMoment = maxForce;
-               break;
-            default:
-               maxForce = 4 * myMech.getGravity ().norm () * body.getMass ();
-               maxMoment = maxForce;
-               break;
-         }
-         createAndAddFrameExciters (
-            controller, myMech, body, maxForce, maxMoment, scale, weights);
-      });
+      // Coordinate actuators
+      ArrayList<CoordinateActuator> cExs = new ArrayList<> ();
+      myJoints.forEach (joint -> {
+         cExs.addAll (
+               CoordinateActuator
+                  .createCoordinateActuators (myMech, joint, 500));
+      });    
+      for (ExcitationComponent ex : cExs) {
+         double weight = 100000;
+         controller.addExciter (weight, ex);
+      }
    }
 
    /**
@@ -837,27 +1023,36 @@ public class GaitModel extends RootModel {
       RigidBody calcnL = myBodies.get ("calcn_l");
       createForceInputProbe (forces, calcnL, "Left", start, stop, scale);
    }
+   
+
+   private void addForceTargetsAndProbes (
+      TrackingController controller, double start, double stop) {
+      
+      
+   }
 
    /**
     * Adds output probes and panel widgets for joint angles.
     * 
     * @param start
     * start time
+    * @param monitor
     * @param stop
     * stop time
     * @param step
     * step size
     */
    private void addJointAngleOutputProbes (
-      double start, double stop, double step) {
+      double start, SmoothingMonitor monitor, double stop, double step) {
       ControlPanel jointPanel = new ControlPanel ("Joint Coordinates");
       myJoints.forEach (jt -> {
          for (int i = 0; i < jt.numCoordinates (); i++) {
             createProbeAndPanel (
-               jt, jointPanel, jt.getCoordinateName (i), start, stop, step);
+               jt, jointPanel, jt.getCoordinateName (i), monitor, start, stop,
+               step);
             jointPanel
                .addWidget (
-                  jt.getName () + " locked", jt,
+                  jt.getCoordinateName (i) + " locked", jt,
                   jt.getCoordinateName (i) + "_locked");
          }
       });
@@ -865,70 +1060,33 @@ public class GaitModel extends RootModel {
    }
 
    /**
-    * Adds output probes for joint forces and moments
+    * Adds output probes related to joint contact for a number of specified
+    * joints.
     * 
     * @param start
     * start time
+    * @param monitor
     * @param stop
     * stop time
     * @param step
     * step size
     */
-   private void addJointLoadOutputProbes (
-      double start, double stop, double step) {
+   private void addJointContactOutputProbes (
+      double start, SmoothingMonitor monitor, double stop, double step) {
+      // Define candidates for joint contact output probes
+      ArrayList<String> candidates = new ArrayList<String> ();
+      candidates.add ("hip_r");
+      candidates.add ("hip_l");
+      candidates.add ("knee_r");
+      candidates.add ("knee_l");
+      candidates.add ("ankle_r");
+      candidates.add ("ankle_l");
       myJoints.forEach (joint -> {
-         for (int i = 0; i < joint.numCoordinates (); i++) {
-            String probeName =
-               joint.getName () + " " + joint.getCoordinateName (i) + "_moment";
-            String filepath =
-               PathFinder
-                  .getSourceRelativePath (
-                     this, "/" + myName + "/Output/" + probeName + ".txt");
-            NumericMonitorProbe momProbe =
-               new NumericMonitorProbe (1, filepath, start, stop, step);
-            momProbe.setModel (myMech);
-            momProbe.setName (probeName);
-            momProbe.setInterpolationOrder (Interpolation.Order.Cubic);
-            JointMomentFunction momentSum =
-               new JointMomentFunction (joint, joint.getCoordinateName (i));
-            momProbe.setDataFunction (momentSum);
-            addOutputProbe (momProbe);
+         // create joint contact output probe for each match
+         if (candidates.contains (joint.getName ())) {
+            createJointContactProbe (joint, monitor, start, stop, step);
          }
       });
-   }
-
-   /**
-    * Adds output probes and panel widgets for muscle excitations and frame
-    * exciter max force/moment.
-    * 
-    * @param controller
-    * {@link TrackingController}
-    * @param start
-    * start time
-    * @param stop
-    * stop time
-    * @param step
-    * step size
-    */
-   private void addMuscleOutputProbes (
-      TrackingController controller, double start, double stop, double step) {
-      ControlPanel musclePanel = new ControlPanel ("Muscle Properties");
-      controller.getExciters ().forEach (e -> {
-         if (e instanceof FrameExciter) {
-            // createProbeAndPanel (
-            // e, musclePanel, "excitation", start, stop, step);
-            musclePanel
-               .addWidget (e.getName () + " excitation", e, "excitation");
-            // for debugging
-            musclePanel.addWidget (e.getName () + " maxForce", e, "maxForce");
-         }
-         else {
-            createProbeAndPanel (e, null, "forceNorm", start, stop, step);
-            musclePanel
-               .addWidget (e.getName () + " excitation", e, "excitation");
-         }
-      });
-      addControlPanel (musclePanel);
    }
 
    /**
@@ -944,17 +1102,23 @@ public class GaitModel extends RootModel {
     * stop time
     */
    private void addNumOutputProbesAndPanel (
-      MarkerMotionData motion, TrackingController controller, double start, double stop) {
+      MarkerMotionData motion, TrackingController controller, double start,
+      double stop) {
       if (motion == null)
          return;
       double step = getMaxStepSize ();
+      SmoothingMonitor monitor = new SmoothingMonitor ();
+      monitor.setName ("Smoothing monitor");
       if (controller != null) {
          setDefaultOutputProbes (controller, start, stop);
-         addErrorOutputProbes(controller, start, stop, step);
-         addMuscleOutputProbes (controller, start, stop, step);
+         addErrorOutputProbes (controller, start, stop, step);
+         addActuatorOutputProbes (controller, monitor, start, stop, step);
       }
-      addJointAngleOutputProbes (start, stop, step);
-      addJointLoadOutputProbes(start, stop, step);
+      addJointAngleOutputProbes (start, monitor, stop, step);
+      addJointContactOutputProbes (start, monitor, stop, step);
+      if (myDebug)
+         addBodyForceOutputProbes (start, stop, step);
+      addMonitor (monitor);
    }
 
    /**
@@ -1004,7 +1168,7 @@ public class GaitModel extends RootModel {
          collectMarkerMotionData (
             controller, targets, motion, map, start, stop);
       addInputProbe (targetProbe);
-      if (myUseIK) {
+      if (myFilterWithIK) {
          // Generate achievable target positions by IK
          PositionInputProbe posProbe =
             createIKPositions (targets, weights, targetProbe);
@@ -1012,7 +1176,7 @@ public class GaitModel extends RootModel {
          // targetProbe gets overwritten
          createIKPositionError (targetProbe, posProbe);
          // Overwrite default marker positions with achievable ones
-         targetProbe.setValues (posProbe, true);
+         targetProbe.setData (posProbe, true);
          // Generate VelocityInputProbes from PositionInputProbes
          VelocityInputProbe velProbe = createVelProbe (posProbe);
          addInputProbe (velProbe);
@@ -1056,60 +1220,6 @@ public class GaitModel extends RootModel {
          targetProbe.addData (time, positions);
       }
       return targetProbe;
-   }
-
-   /**
-    * Creates a complete set of FrameExciters for a given frame and adds them to
-    * a MechModel and a tracking controller.
-    *
-    * @param ctrl
-    * tracking controller to add the exciters to
-    * @param mech
-    * MechModel to add the exciters to
-    * @param frame
-    * frame for which the exciters should be created
-    * @param maxForce
-    * maximum translational force along any axis
-    * @param maxMoment
-    * maximum moment about any axis
-    * @param excScales
-    * factors to scale max force and moment to individual wrench dofs
-    * @param regWeights
-    * exciter weights for the inverse controller
-    * @author John Lloyd
-    */
-   private FrameExciter[] createAndAddFrameExciters (
-      TrackingController ctrl, MechModel mech, Frame frame, double maxForce,
-      double maxMoment, double[] excScales, double[] regWeights) {
-      FrameExciter[] exs = new FrameExciter[6];
-      exs[0] =
-         new FrameExciter (null, frame, WrenchDof.FX, excScales[0] * maxForce);
-      exs[1] =
-         new FrameExciter (null, frame, WrenchDof.FY, excScales[1] * maxForce);
-      exs[2] =
-         new FrameExciter (null, frame, WrenchDof.FZ, excScales[2] * maxForce);
-      exs[3] =
-         new FrameExciter (null, frame, WrenchDof.MX, excScales[3] * maxMoment);
-      exs[4] =
-         new FrameExciter (null, frame, WrenchDof.MY, excScales[4] * maxMoment);
-      exs[5] =
-         new FrameExciter (null, frame, WrenchDof.MZ, excScales[5] * maxMoment);
-      // if the frame has a name, use this to create names for the exciters
-      if (frame.getName () != null) {
-         WrenchDof[] wcs = WrenchDof.values ();
-         for (int i = 0; i < exs.length; i++) {
-            exs[i]
-               .setName (
-                  frame.getName () + "_" + wcs[i].toString ().toLowerCase ());
-         }
-      }
-      if (mech != null) {
-         for (int i = 0; i < exs.length; i++) {
-            mech.addForceEffector (exs[i]);
-            ctrl.addExciter (regWeights[i], exs[i]);
-         }
-      }
-      return exs;
    }
 
    /**
@@ -1187,8 +1297,8 @@ public class GaitModel extends RootModel {
       grf.setModel (myMech);
       grf.setName (frame.getName () + " ground reaction forces");
       grf.setStartStopTimes (start, stop);
-      grf.setInterpolationOrder (Interpolation.Order.Cubic);
-      MomentArmFunction momentArm = new MomentArmFunction (frame, side, scale);
+      grf.setInterpolationOrder (Interpolation.Order.Linear);
+      GroundReactionMomentFunction momentArm = new GroundReactionMomentFunction (frame, side, scale);
       Main.getMain ().getViewer ().addRenderable (momentArm);
       grf.setDataFunction (momentArm);
       grf.setVsize (6);
@@ -1204,6 +1314,42 @@ public class GaitModel extends RootModel {
          grf.addData (time, force);
       }
       addInputProbe (grf);
+   }
+
+   /**
+    * Creates and adds a {@link NumericMonitorProbe} with
+    * {@link ExciterForceFunction} as data function to track the generated
+    * forces for each exciter that is not a muscle. Created probes are smoothed
+    * using a moving average filter whose windows size depends on the current
+    * step size.
+    * 
+    * @param e
+    * excitation component for which the probe is created
+    * @param monitor 
+    * @param start
+    * start time
+    * @param stop
+    * stop tome
+    * @param step
+    * step size
+    */
+   private void createExciterOutputProbe (
+      ExcitationComponent e, SmoothingMonitor monitor, double start,
+      double stop, double step) {
+      String probeName = e.getName () + "_force";
+      String filepath =
+         PathFinder
+            .getSourceRelativePath (
+               this, "/" + myName + "/Output/" + probeName + ".txt");
+      NumericMonitorProbe momProbe =
+         new NumericMonitorProbe (1, filepath, start, stop, step);
+      momProbe.setModel (myMech);
+      momProbe.setName (probeName);
+      momProbe.setInterpolationOrder (Interpolation.Order.Linear);
+      ExciterForceFunction force = new ExciterForceFunction (e);
+      momProbe.setDataFunction (force);
+      monitor.add (momProbe);
+      addOutputProbe (momProbe);
    }
 
    /**
@@ -1252,20 +1398,93 @@ public class GaitModel extends RootModel {
       String posProbeName = "IK target positions";
       IKSolver solver = new IKSolver (myMech, targets, weights);
       PositionInputProbe posProbe =
-         solver.createMarkerPositionProbe (posProbeName, targetProbe, -1);
+         solver.createMarkerPositionProbe (posProbeName, targetProbe, true, -1);
       VectorNd targs0 = targetProbe.getNumericList ().getFirst ().v;
       int niters = solver.solve (targs0);
-      System.out.println ("in " + niters + " iterattions");
+      if (myDebug)
+         System.out.println ("in " + niters + " iterattions");
       // Generate an IK probe for non dynamic visualization
       IKProbe ikProbe =
          new IKProbe (posProbeName, myMech, targets, weights,
             targetProbe.getStartTime (),
             targetProbe.getStopTime ());
-      ikProbe.setValues (posProbe, true);
+      ikProbe.setData (posProbe, true);
       addInputProbe (ikProbe);
       ikProbe.setActive (false);
       ikProbe.setBodiesNonDynamicIfActive (true);
       return posProbe;
+   }
+
+   /**
+    * Generates a {@link NumericMonitorProbe} for the specified {@code joint}
+    * that computes the current contact force at that joint.
+    * 
+    * @param joint
+    * joint to be evaluated
+    * @param monitor 
+    * @param start
+    * start time
+    * @param stop
+    * stop time
+    * @param step
+    * step size
+    */
+   private void createJointContactProbe (
+      JointBase joint, SmoothingMonitor monitor, double start, double stop,
+      double step) {
+      String probeName = joint.getName () + "_contactForce";
+      String filepath =
+         PathFinder
+            .getSourceRelativePath (
+               this, "/" + myName + "/Output/" + probeName + ".txt");
+      NumericMonitorProbe momProbe =
+         new NumericMonitorProbe (1, filepath, start, stop, step);
+      momProbe.setModel (myMech);
+      momProbe.setName (probeName);
+      momProbe.setInterpolationOrder (Interpolation.Order.Linear);
+      JointForceFunction force = new JointForceFunction (joint);
+      momProbe.setDataFunction (force);
+      ArrayList<String> labels = new ArrayList<String> ();
+      labels.add ("contact force");
+      momProbe.setLegendLabels (labels);
+      monitor.add (momProbe);
+      addOutputProbe (momProbe);
+   }
+
+   /**
+    * Generates an output probe that calculates the normalized fiber length
+    * during computation for the {@link ExcitationComponent} {@code e}.
+    * 
+    * @param e
+    * ExcitationComponent
+    * @param monitor 
+    * @param cmcStart
+    * start time
+    * @param stop
+    * stop time
+    * @param step
+    * step size
+    */
+   private void createMusFbrLgthOutputProbe (
+      ExcitationComponent e, SmoothingMonitor monitor, double cmcStart,
+      double stop, double step) {
+      MultiPointMuscle muscle = (MultiPointMuscle)e;
+      AxialMaterial mat = muscle.getMaterial ();
+      String probeName = e.getName () + " normalized fiber length";
+      String probePath =
+         PathFinder
+            .getSourceRelativePath (
+               this, "/" + myName + "/Output/" + probeName + ".txt");
+      NumericMonitorProbe fiberLength =
+         new NumericMonitorProbe (1, probePath, cmcStart, stop, step);
+      fiberLength.setModel (myMech);
+      fiberLength.setName (probeName);
+      fiberLength.setInterpolationOrder (Interpolation.Order.Linear);
+      NormalizedFiberLengthFunction nFibLength =
+         new NormalizedFiberLengthFunction (mat);
+      fiberLength.setDataFunction (nFibLength);
+      monitor.add (fiberLength);
+      addOutputProbe (fiberLength);
    }
 
    /**
@@ -1280,6 +1499,7 @@ public class GaitModel extends RootModel {
     * Control panel
     * @param prop
     * Name of the property
+    * @param monitor
     * @param start
     * Start time of the probe
     * @param stop
@@ -1288,10 +1508,11 @@ public class GaitModel extends RootModel {
     * Output interval of the probe
     */
    private void createProbeAndPanel (
-      ModelComponent comp, ControlPanel panel, String prop, double start,
-      double stop, double step) {
+      ModelComponent comp, ControlPanel panel, String prop,
+      SmoothingMonitor monitor, double start, double stop, double step) {
       String filepath =
-         PathFinder.getSourceRelativePath (
+         PathFinder
+            .getSourceRelativePath (
                this, "/" + myName + "/Output/" + comp.getName () + " " + prop
                + ".txt");
       NumericOutputProbe probe =
@@ -1302,6 +1523,9 @@ public class GaitModel extends RootModel {
       }
       probe.setName (comp.getName () + " " + prop);
       probe.setStartStopTimes (start, stop);
+      if (monitor != null) {
+         monitor.add (probe);
+      }
       addOutputProbe (probe);
    }
 
@@ -1313,10 +1537,9 @@ public class GaitModel extends RootModel {
     * @return
     */
    private VelocityInputProbe createVelProbe (PositionInputProbe posProbe) {
-      Double step = getMaxStepSize ();
       VelocityInputProbe velProbe =
          VelocityInputProbe
-            .createInterpolated ("target velocities", posProbe, step);
+            .createInterpolated ("target velocities", posProbe, true, -1);
       // smooth velocities, since they were kind of wobbly. Done by John,
       // generalised by me
       int wsize = (int)(0.21 / getMaxStepSize ());
@@ -1336,12 +1559,15 @@ public class GaitModel extends RootModel {
    @SuppressWarnings("unchecked")
    private RenderableComponentList<RigidBody> getBodiesFromOsim () {
       myBodies = (RenderableComponentList<RigidBody>)myMech.get ("bodyset");
-      // Set inertia mode to density
+      // Set inertia mode to density is a body of zero mass is encountered
       myBodies.forEach (body -> {
-         if (body.getName ().contains ("scapula")
-         || body.getName ().contains ("clavicle")) {
+         if (body.getMass () == 0) {
+            System.out
+               .println (
+                  "Warning: " + body.getName ()
+                  + " has zero mass. Assigned density of 1 kg/m^3 to compute mass and moment of inertia.");
             body.setDensity (1);
-            body.setInertiaMethod (InertiaMethod.DENSITY);  
+            body.setInertiaMethod (InertiaMethod.DENSITY);
          }
       });
       return myBodies;
@@ -1369,10 +1595,24 @@ public class GaitModel extends RootModel {
                "Generated joint constraints from ridig body connectors.");
          joints = getJointsFromBodyset (bodies, comp);
       }
-      ComponentUtils
-         .deleteComponentAndDependencies (
-            myMech.findComponent ("jointset/ground_pelvis"));
-      // joints.get ("ground_pelvis").setCoordinate (5, 0.25);
+      joints.forEach (joint -> {
+         switch (joint.getName ()) {
+            case "subtalar_l":
+            case "subtalar_r":
+            case "mtp_l":
+            case "mtp_r":
+            case "radius_hand_r":
+            case "radius_hand_l":
+            case "r_scapulothoracic":
+            case "l_scapulothoracic":
+            case "r_sternoclavicular":
+            case "l_sternoclavicular":
+               for (int i = 0; i < joint.numCoordinates (); i++) {
+                  joint.setCoordinateLocked (i, true);
+               }
+               break;
+         }
+      });
       return joints;
    }
 
@@ -1755,34 +1995,31 @@ public class GaitModel extends RootModel {
       RenderableComponentList<ModelComponent> forces =
          (RenderableComponentList<ModelComponent>)myMech.get ("forceset");
       forces.forEach (frc -> {
-         frc.getChildren ().forEachRemaining (obj -> {
-            if (obj instanceof PointList)
-               return;
-            if (obj instanceof MuscleComponent) {
-               MuscleComponent muscle = (MuscleComponent)obj;
-               muscle.setExcitation (0.0);
-               myMuscles.add (muscle);
-            }
-         });
+         if (frc instanceof MuscleComponent) {
+            MuscleComponent muscle = (MuscleComponent)frc;
+            muscle.setExcitation (0.0);
+            myMuscles.add (muscle);
+         }
       });
-      setSimpleMuscles (problemMuscles);
-      //setMillardMuscles(problemMuscles);
-      setSimpleMuscles (gluts);
-      //setMillardMuscles (gluts);
-      setSimpleMuscles (pelvisFemur);
-      //setMillardMuscles (pelvisFemur);
-      setSimpleMuscles (pelvisTibia);
-      //setMillardMuscles (pelvisTibia);
-      setSimpleMuscles (femurTibia);
-      //setMillardMuscles (femurTibia);
-      setSimpleMuscles (femurCalcn);
-      //setMillardMuscles (femurCalcn);
-      setSimpleMuscles (tibiaCalcn);
-      //setMillardMuscles (tibiaCalcn);
-      setSimpleMuscles (tibiaToes);
-      //setMillardMuscles (tibiaToes);
-      setSimpleMuscles (pelvisTorso);
-      //setMillardMuscles (pelvisTorso);
+      //ComponentUtils.deleteComponentsAndDependencies (myMuscles);
+      //setSimpleMuscles (problemMuscles);
+      setMillardMuscles(problemMuscles);
+      //setSimpleMuscles (gluts);
+      setMillardMuscles (gluts);
+      //setSimpleMuscles (pelvisFemur);
+      setMillardMuscles (pelvisFemur);
+      //setSimpleMuscles (pelvisTibia);
+      setMillardMuscles (pelvisTibia);
+      //setSimpleMuscles (femurTibia);
+      setMillardMuscles (femurTibia);
+      //setSimpleMuscles (femurCalcn);
+      setMillardMuscles (femurCalcn);
+      //setSimpleMuscles (tibiaCalcn);
+      setMillardMuscles (tibiaCalcn);
+      //setSimpleMuscles (tibiaToes);
+      setMillardMuscles (tibiaToes);
+      //setSimpleMuscles (pelvisTorso);
+      setMillardMuscles (pelvisTorso);
       return myMuscles;
    }
 
@@ -1826,19 +2063,17 @@ public class GaitModel extends RootModel {
       TrackingController controller = addControllerAndProps ();
       addExcitersToController (controller);
       addPointTargetsAndProbes (controller, myMap, myMotion, start, stop);
+      addForceTargetsAndProbes (controller, start, stop);
       addForceInputProbes (myForces, start, stop, scale);
       // Parametric control
-      //addCoordsInputProbes (myCoords, start, stop);
+      // addCoordsInputProbes (myCoords, start, stop);
       // Add output probes
       // TODO: Numeric Monitor Probes for later mesh evaluation (for cases,
       // where the data is not simply collected but generated by a function
       // within the probe itself
       addNumOutputProbesAndPanel (myMotion, controller, start, stop);
       // Stop simulation after last frame
-      if (name.equals ("gait2392"))
-         addBreakPoint (myMotion.getFrameTime (74));
-      else
-         addBreakPoint (stop);
+      addBreakPoint (stop);
    }
 
    /**
@@ -2040,8 +2275,7 @@ public class GaitModel extends RootModel {
       String geometryPath = myName + "/Geometry/";
       File geometryFile = ArtisynthPath.getSrcRelativeFile (this, geometryPath);
       if (osimFile.exists () && geometryFile.exists ()) {
-         OpenSimParser parser = new OpenSimParser (osimFile);
-         parser.setGeometryPath (geometryFile);
+         OpenSimParser parser = new OpenSimParser (osimFile, geometryFile);
          parser.createModel (myMech);
       }
    }
@@ -2074,7 +2308,7 @@ public class GaitModel extends RootModel {
          .println (
             "Experimental markers: " + trcReader.getMarkerLabels ().size ());
       System.out
-         .println ("TRC file: read " + trcReader.getNumFrames () + " frames");
+         .println ("TRC file: read " + trcReader.numFrames () + " frames");
       MarkerMotionData motion = trcReader.getMotionData ();
       // Scale the marker trajectories individually, since there is no
       // general .scale () method for marker positions if the unit is not
@@ -2112,6 +2346,8 @@ public class GaitModel extends RootModel {
       // Handle overconstrained contact
       coll.setReduceConstraints (true);
       coll.setBilateralVertexContact (false);
+      // Smooth vertex penetration contatcs
+      coll.getSmoothVertexContacts ();
       // Add contact interfaces
       // RigidBody bodyA = (RigidBody)jt.getBodyA ();
       // RigidBody bodyB = (RigidBody)jt.getBodyB ();
@@ -2122,13 +2358,13 @@ public class GaitModel extends RootModel {
       // createCollision (bodyA, bodyB, comp, damp);
       // Initialize the contact monitor to handle all individual collision
       // responses
-      String msgName = name + "/Output/" + name + "_message_file.txt";
-      String msgPath =
-         ArtisynthPath.getSrcRelativePath (this, msgName).toString ();
-      ContactMonitor contMonitor =
-         new ContactMonitor (coll.responses (), msgPath);
-      contMonitor.setName ("Contact monitor");
-      addMonitor (contMonitor);
+      //String msgName = name + "/Output/" + name + "_message_file.txt";
+      //String msgPath =
+      //   ArtisynthPath.getSrcRelativePath (this, msgName).toString ();
+      //ContactMonitor contMonitor =
+      //   new ContactMonitor (coll.responses (), msgPath);
+      //contMonitor.setName ("Contact monitor");
+      //addMonitor (contMonitor);
    }
 
    /**
@@ -2274,11 +2510,13 @@ public class GaitModel extends RootModel {
       solver.setHybridSolve (false);
       solver.setIntegrator (Integrator.ConstrainedBackwardEuler);
       solver.setStabilization (PosStabilization.GlobalStiffness);
-      setMaxStepSize (1e-2);
-      // Damping properties
+      setMaxStepSize (1e-3);
+      // mech model properties
       myMech.setInertialDamping (3.0);
+      // Collect constraint forces in the "force" fields of particles and bodies
+      myMech.setUpdateForcesAtStepEnd (true);
       // Define scale (mm = 1000, or m = 1)
-      myScale = 1.0;;
+      myScale = 1.0;
       myMech.setGravity (new Vector3d (0, -9.81, 0));
       if (myMech.getGravity ().equals (new Vector3d (0, 0, 0))) {
          JFrame frame = new JFrame ("Warning");
@@ -2601,7 +2839,7 @@ public class GaitModel extends RootModel {
          .append (
             "%%------------------------------------------------------------%%\n")
          .append ("\nTRACKING CONTROLLER INFORMATION\n")
-         .append ("Performed IK at startup: ").append (myUseIK).append ("\n")
+         .append ("Performed IK at startup: ").append (myFilterWithIK).append ("\n")
          .append ("Use KKT Factorization: ")
          .append (controller.getUseKKTFactorization ()).append ("\n")
          .append ("Incremental computation: ")

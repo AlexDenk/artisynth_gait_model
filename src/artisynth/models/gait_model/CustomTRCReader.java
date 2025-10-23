@@ -76,7 +76,6 @@ public class CustomTRCReader extends TRCReader {
          }
          else if (label.equalsIgnoreCase ("NumMarkers")) {
             numMarkers = scanInt (values[i], 3, i + 1);
-            //numMarkers = myMap.getExpLabels ().size ();
          }
          else if (label.equalsIgnoreCase ("Units")) {
             myUnits = values[i].trim ();
@@ -93,17 +92,17 @@ public class CustomTRCReader extends TRCReader {
          else {
             System.out
                .println (
-                  "WARNING, TRCReader: unrecognized data label '" + label
+                  "Warning: TRCReader: unrecognized data label '" + label
                   + "', ignoring");
          }
       }
       line = reader.readLine ();
       labels = line.split ("\t");
       numLines++;
-      // ignore first two labels
       ArrayList<String> expLabels = myMap.getExpLabels ();
       ArrayList<String> mkrLabels = new ArrayList<String> ();
       ArrayList<Integer> idxs = new ArrayList<Integer> ();
+   // ignore first two labels time and frame
       for (int i = 2; i < labels.length; i += 3) {
          String label = labels[i].trim ();
          if (label.length () == 0) {
@@ -121,7 +120,7 @@ public class CustomTRCReader extends TRCReader {
       if (mkrLabels.size () != numMarkers) {
          System.out
             .println (
-               "WARNING, TRCReader: num marker labels (" + mkrLabels.size ()
+               "Warning: TRCReader: num marker labels (" + mkrLabels.size ()
                + ") != specified number of markers (" + numMarkers
                + "), assuming " + mkrLabels.size ());
       }
@@ -177,7 +176,7 @@ public class CustomTRCReader extends TRCReader {
       if (myMotionData.numFrames () != numFrames) {
          System.out
             .println (
-               "WARNING, TRCReader: reader " + myMotionData.numFrames ()
+               "Warning: TRCReader: reader " + myMotionData.numFrames ()
                + " frames; expected " + numFrames);
       }
    }
