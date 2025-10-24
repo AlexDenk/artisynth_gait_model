@@ -878,7 +878,6 @@ public class GaitModel extends RootModel {
          }
          else {
             createProbeAndPanel (e, null, "forceNorm", monitor, cmcStart, stop, step);
-            //createProbeAndPanel(e, null, "muscleLength", monitor, cmcStart, stop, step);
             musclePanel
                .addWidget (e.getName () + " excitation", e, "excitation");
             if (myDebug)
@@ -991,7 +990,7 @@ public class GaitModel extends RootModel {
       myJoints.forEach (joint -> {
          cExs.addAll (
                CoordinateActuator
-                  .createCoordinateActuators (myMech, joint, 500));
+                  .createCoordinateActuators (myMech, joint, 800));
       });    
       for (ExcitationComponent ex : cExs) {
          double weight = 100000;
@@ -1022,13 +1021,6 @@ public class GaitModel extends RootModel {
       createForceInputProbe (forces, calcnR, "Right", start, stop, scale);
       RigidBody calcnL = myBodies.get ("calcn_l");
       createForceInputProbe (forces, calcnL, "Left", start, stop, scale);
-   }
-   
-
-   private void addForceTargetsAndProbes (
-      TrackingController controller, double start, double stop) {
-      
-      
    }
 
    /**
@@ -2063,7 +2055,6 @@ public class GaitModel extends RootModel {
       TrackingController controller = addControllerAndProps ();
       addExcitersToController (controller);
       addPointTargetsAndProbes (controller, myMap, myMotion, start, stop);
-      addForceTargetsAndProbes (controller, start, stop);
       addForceInputProbes (myForces, start, stop, scale);
       // Parametric control
       // addCoordsInputProbes (myCoords, start, stop);
