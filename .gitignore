@@ -55,3 +55,4 @@ CVS
 # MacOS files
 ######################
 .DS_Store
+/classes/
