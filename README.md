@@ -6,6 +6,7 @@ The model comes in two variations: including muscles (GaitModelWithMuscles) and 
 
 If you use the model or parts of it in your research, please cite the following references:
 > A. Denk, W. Kowalczyk. Lower Limb Multibody Model built in ArtiSynth for the Use in Coupled Multibody Finite Element Simulations. 95th Annual Meeting of the International Association of Applied Mathematics and Mechanics - GAMM, Poznan (Poland), April 07th - 11th 2025
+
 > A. Denk, J. E. Lloyd, D. Raab, W. Kowalczyk. Developing and Validating an ArtiSynth Multibody Model for Gait Analysis. European Society of Biomechanics (ESB) Congress, ETH Zürich (Switzerland), July 06th - 09th 2025
 
 ![General model overview](Gait2392_Demo.gif)
