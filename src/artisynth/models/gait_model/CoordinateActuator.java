@@ -14,9 +14,16 @@ import maspack.util.DataBuffer;
 import maspack.util.DoubleInterval;
 
 /**
- * @author Alexander Denk Copyright (c) 2025 <br>
- * (UDE) University of Duisburg-Essen <br>
- * Chair of Mechanics and Robotics <br>
+ * The coordinate actuator serves as exciter of a specified degree of freedom
+ * (dof) of a joint. It generates torques for the range a = [-1, 1].
+ * <p>
+ * 
+ * @author Alexander Denk Copyright (c) 2025
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
  * alexander.denk@uni-due.de
  */
 public class CoordinateActuator extends ModelComponentBase

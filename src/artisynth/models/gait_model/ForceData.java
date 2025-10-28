@@ -4,6 +4,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import maspack.matrix.Vector3d;
 
+/**
+ * File format to store force data specified by .mot files.
+ * <p>
+ * 
+ * @author Alexander Denk Copyright (c) 2025
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
+ * alexander.denk@uni-due.de
+ */
 public class ForceData {
       protected ArrayList<ArrayList<Vector3d>> myForceData = new ArrayList<> ();
       protected ArrayList<String> myForceLabels = new ArrayList<String> ();

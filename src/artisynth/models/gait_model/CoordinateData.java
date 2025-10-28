@@ -3,6 +3,18 @@ package artisynth.models.gait_model;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * File format to store coordinate data specified by .mot files.
+ * <p>
+ * 
+ * @author Alexander Denk Copyright (c) 2025
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
+ * alexander.denk@uni-due.de
+ */
 public class CoordinateData {
    protected ArrayList<ArrayList<Double>> myCoordData = new ArrayList<> ();
    protected ArrayList<String> myCoordLabels = new ArrayList<String> ();

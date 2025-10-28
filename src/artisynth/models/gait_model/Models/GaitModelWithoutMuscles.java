@@ -34,8 +34,11 @@ import artisynth.core.probes.*;
 import artisynth.core.renderables.ColorBar;
 import artisynth.core.util.ArtisynthPath;
 import artisynth.core.workspace.RootModel;
+
 import artisynth.models.gait_model.*;
 import artisynth.models.gait_model.CoordinateActuator;
+import artisynth.models.gait_model.MotionTargetController;
+
 import maspack.geometry.*;
 import maspack.interpolation.Interpolation;
 import maspack.matrix.*;
@@ -48,13 +51,19 @@ import maspack.spatialmotion.Wrench;
 import maspack.util.*;
 
 /**
- * @author Alexander Denk Copyright (c) 2023 <br>
- * (UDE) University of Duisburg-Essen <br>
- * Chair of Mechanics and Robotics <br>
+ * Baseline model without muscles.
+ * <p>
+ * 
+ * @author Alexander Denk Copyright (c) 2025
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
  * alexander.denk@uni-due.de
  */
 
-public class GaitModel extends RootModel {
+public class GaitModelWithoutMuscles extends RootModel {
    // ----------------------------Instance Fields-------------------------------
    // Current mechmodel
    MechModel myMech = new MechModel ();
@@ -93,117 +102,6 @@ public class GaitModel extends RootModel {
    // Used to flag whether ground reaction forces are used during forward
    // dynamics
    boolean myUseGRF = true;
-   
-   // Arrays of grouped muscles, sorted by location and function
-   String[] gluts =
-      new String[] { "glut_med1_r",
-                     "glut_med2_r",
-                     "glut_med3_r",
-                     "glut_min1_r",
-                     "glut_min2_r",
-                     "glut_min3_r",
-                     "glut_max1_r",
-                     "glut_max2_r",
-                     "glut_max3_r",
-                     "glut_med1_l",
-                     "glut_med2_l",
-                     "glut_med3_l",
-                     "glut_min1_l",
-                     "glut_min2_l",
-                     "glut_min3_l",
-                     "glut_max1_l",
-                     "glut_max2_l",
-                     "glut_max3_l"};
-   String[] pelvisFemur =
-      new String[] { "add_long_r",
-                     "add_brev_r",
-                     "add_mag1_r",
-                     "add_mag2_r",
-                     "add_mag3_r",
-                     "pect_r",
-                     "iliacus_r",
-                     "psoas_r",
-                     "quad_fem_r",
-                     "gem_r",
-                     "peri_r",
-                     "add_long_l",
-                     "add_brev_l",
-                     "add_mag1_l",
-                     "add_mag2_l",
-                     "add_mag3_l",
-                     "pect_l",
-                     "iliacus_l",
-                     "psoas_l",
-                     "quad_fem_l",
-                     "gem_l",
-                     "peri_l"};
-   String[] pelvisTibia =
-      new String[] { "semimem_r",
-                     "semiten_r",
-                     "bifemlh_r",
-                     "sar_r",
-                     "tfl_r",
-                     "grac_r",
-                     "rect_fem_r",
-                     "semimem_l",
-                     "semiten_l",
-                     "bifemlh_l",
-                     "sar_l",
-                     "tfl_l",
-                     "grac_l",
-                     "rect_fem_l"};
-   String[] femurTibia =
-      new String[] { "bifemsh_r",
-                     "vas_med_r",
-                     "vas_int_r",
-                     "vas_lat_r",
-                     "bifemsh_l",
-                     "vas_med_l",
-                     "vas_int_l",
-                     "vas_lat_l"};
-   String[] problemMuscles =
-      new String[] { "rect_fem_l",
-                     "rect_fem_r",
-                     "vas_med_r",
-                     "vas_lat_r",
-                     "vas_med_l",
-                     "vas_lat_l",
-                     "ext_dig_r",
-                     "ext_dig_l"};
-   String[] femurCalcn =
-      new String[] { "med_gas_r",
-                     "lat_gas_r",
-                     "med_gas_l",
-                     "lat_gas_l"};
-   String[] tibiaCalcn =
-      new String[] { "soleus_r",
-                     "tib_post_r",
-                     "tib_ant_r",
-                     "per_brev_r",
-                     "per_long_r",
-                     "per_tert_r",
-                     "soleus_l",
-                     "tib_post_l",
-                     "tib_ant_l",
-                     "per_brev_l",
-                     "per_long_l",
-                     "per_tert_l"};
-   String[] tibiaToes =
-      new String[] { "flex_dig_r",
-                     "flex_hal_r",
-                     "ext_dig_r",
-                     "ext_hal_r",
-                     "flex_dig_l",
-                     "flex_hal_l",
-                     "ext_dig_l",
-                     "ext_hal_l"};
-   String[] pelvisTorso =
-      new String[] { "extobl_r",
-                     "intobl_r", 
-                     "ercspn_r",
-                     "extobl_l",
-                     "intobl_l",
-                     "ercspn_l" };
 
    // ----------------------------Nested classes--------------------------------
    /**
@@ -218,9 +116,18 @@ public class GaitModel extends RootModel {
     * <p>
     * <table summary="">
     * <tbody>
-    *   <tr><td>s</td><td>Distance vector between force plate COP and calcanei frame</td></tr>
-    *   <tr><td>F</td><td>Ground reaction force from force plate</td></tr>
-    *   <tr><td>T</td><td>Ground reaction moment from force plate</td></tr>
+    * <tr>
+    * <td>s</td>
+    * <td>Distance vector between force plate COP and calcanei frame</td>
+    * </tr>
+    * <tr>
+    * <td>F</td>
+    * <td>Ground reaction force from force plate</td>
+    * </tr>
+    * <tr>
+    * <td>T</td>
+    * <td>Ground reaction moment from force plate</td>
+    * </tr>
     * </tbody>
     * </table>
     */
@@ -249,7 +156,7 @@ public class GaitModel extends RootModel {
          this.msgName = myName + "/Output/" + myName + "_message_file.txt";
          this.msgPath =
             ArtisynthPath
-               .getSrcRelativePath (GaitModel.class, msgName).toString ();
+               .getSrcRelativePath (GaitModelWithoutMuscles.class, msgName).toString ();
          try {
             writer = new PrintWriter (new FileWriter (msgPath, true));
          }
@@ -355,37 +262,6 @@ public class GaitModel extends RootModel {
 
    /**
     * Subclass to provide a data function for {@link NumericMonitorProbe}s that
-    * collects the bilateral body force of a joint in a certain axis and scales
-    * this force to the body weight (BW). Scaling is performed as:
-    * <p>
-    * {@code f_BW = f_abs / (g*W_B)}
-    */
-   public class JointForceFunction implements DataFunction, Clonable {
-      JointBase myJoint = null;
-
-      public JointForceFunction () {
-         this (null);
-      }
-
-      public JointForceFunction (JointBase joint) {
-         this.myJoint = joint;
-      }
-
-      @Override
-      public void eval (VectorNd vec, double t, double trel) {
-         Wrench load = myJoint.getBilateralForceInA ();
-         double fBW =
-            load.f.y / (myMech.getGravity ().norm () * myMech.getActiveMass ());
-         vec.set (0, fBW);
-      }
-
-      public Object clone () throws CloneNotSupportedException {
-         return super.clone ();
-      }
-   }
-
-   /**
-    * Subclass to provide a data function for {@link NumericMonitorProbe}s that
     * computes the normalized fiber length of any equilibrium exciter that has
     * the property optimalFiberLength. Normalized fiber length is computed as: 
     * <p>
@@ -475,15 +351,15 @@ public class GaitModel extends RootModel {
    }
 
    // -----------------------------Constructors---------------------------------
-   public GaitModel () {
+   public GaitModelWithoutMuscles () {
    }
 
-   public GaitModel (String name) throws IOException {
+   public GaitModelWithoutMuscles (String name) throws IOException {
       super (name);
       this.myName = name;
    }
 
-   public GaitModel (String name, boolean ik, boolean grf) throws IOException {
+   public GaitModelWithoutMuscles (String name, boolean ik, boolean grf) throws IOException {
       super (name);
       this.myName = name;
       this.myFilterWithIK = ik;
@@ -524,7 +400,7 @@ public class GaitModel extends RootModel {
       return myFilterWithIK;
    }
    
-   public boolean getUseC() {
+   public boolean getUseCA() {
       return myUseCAsSolely;
    }
 
@@ -654,8 +530,8 @@ public class GaitModel extends RootModel {
       ComponentListView<Controller> controllers = getControllers ();
       if (controllers.size () == 0)
          return;
-      TrackingController controller =
-         (TrackingController)controllers.get ("Motion controller");
+      MotionTargetController controller =
+         (MotionTargetController)controllers.get ("Motion controller");
       controller.getTargetPoints ().forEach (c -> {
          RenderProps.setPointColor (c, Color.WHITE);
          RenderProps.setPointRadius (c, 0.01 * scale);
@@ -766,8 +642,8 @@ public class GaitModel extends RootModel {
     */
    public void setupInverseKinematicsRun () {
       myMech.setDynamicsEnabled (false);
-      TrackingController controller =
-         (TrackingController)getControllers ().get ("Motion controller");
+      MotionTargetController controller =
+         (MotionTargetController)getControllers ().get ("Motion controller");
       controller.setActive (false);
       ComponentList<Probe> iProbes = getInputProbes ();
       iProbes.forEach (probe -> {
@@ -829,8 +705,8 @@ public class GaitModel extends RootModel {
          writeJointInfo (output, myJoints);
          writeMuscleInfo (output, myMuscles);
          writeFEMInfo (output, myMeshes);
-         TrackingController controller =
-            (TrackingController)getControllers ().get ("Motion controller");
+         MotionTargetController controller =
+            (MotionTargetController)getControllers ().get ("Motion controller");
          if (controller != null)
             writeProbesInfo (
                output, controller, myMotion, myMap, myForces, myMarkers);
@@ -848,11 +724,11 @@ public class GaitModel extends RootModel {
    // --------------------------Private Instance Methods------------------------
    /**
     * Adds output probes and panel widgets for the excitations of all exciters
-    * of the TrackingController and also max force/moment if the model is driven
+    * of the MotionTargetController and also max force/moment if the model is driven
     * by frame exciters or coordinate actuators.
     * 
     * @param controller
-    * {@link TrackingController}
+    * {@link MotionTargetController}
     * @param monitor 
     * @param start
     * start time
@@ -862,7 +738,7 @@ public class GaitModel extends RootModel {
     * step size
     */
    private void addActuatorOutputProbes (
-      TrackingController controller, SmoothingMonitor monitor, double start,
+      MotionTargetController controller, SmoothingMonitor monitor, double start,
       double stop, double step) {
       double cmcStart = 0.03;
       ControlPanel musclePanel = new ControlPanel ("Muscle Properties");
@@ -915,9 +791,9 @@ public class GaitModel extends RootModel {
     * 
     * @return generated tracking controller object
     */
-   private TrackingController addControllerAndProps () {
-      TrackingController controller =
-         new TrackingController (myMech, "Motion controller");
+   private MotionTargetController addControllerAndProps () {
+      MotionTargetController controller =
+         new MotionTargetController (myMech, "Motion controller");
       controller.setUseKKTFactorization (false);
       controller.setComputeIncrementally (true);
       controller.setRefactorForIncremental (false);
@@ -933,35 +809,12 @@ public class GaitModel extends RootModel {
       addController (controller);
       return controller;
    }
-
-   /**
-    * Adds the data stored in {@code myCoords} as a {@link NumericInputProbe}
-    * per joint, if available.
-    * 
-    * @param coords
-    * {@link CoordinateData}
-    * @param start
-    * start time
-    * @param stop
-    * stop time
-    */
-   private void addCoordsInputProbes (
-      CoordinateData coords, double start, double stop) {
-      if (coords != null) {
-         myJoints.forEach (jt -> {
-            for (int j = 0; j < jt.numCoordinates (); j++) {
-               createCoordsInputProbe (
-                  jt, coords, jt.getCoordinateName (j), start, stop);
-            }
-         });
-      }
-   }
    
    /**
     * Adds the position error as numeric output probe
     * 
     * @param controller
-    * {@link TrackingController}
+    * {@link MotionTargetController}
     * @param start
     * start time
     * @param stop
@@ -970,7 +823,7 @@ public class GaitModel extends RootModel {
     * step size
     */
    private void addErrorOutputProbes (
-      TrackingController controller, double start, double stop, double step) {
+      MotionTargetController controller, double start, double stop, double step) {
       MotionTargetTerm mTerm = controller.getMotionTargetTerm ();
       createProbeAndPanel (mTerm, null, "positionError", null, start, stop, step);
    }
@@ -980,11 +833,9 @@ public class GaitModel extends RootModel {
     * calcanei to the controller.
     * 
     * @param controller
-    * {@link TrackingController}
+    * {@link MotionTargetController}
     */
-   private void addExcitersToController (TrackingController controller) {
-      // Muscles
-      controller.addExciters (myMuscles);
+   private void addExcitersToController (MotionTargetController controller) {
       // Coordinate actuators
       ArrayList<CoordinateActuator> cExs = new ArrayList<> ();
       myJoints.forEach (joint -> {
@@ -993,7 +844,7 @@ public class GaitModel extends RootModel {
                   .createCoordinateActuators (myMech, joint, 800));
       });    
       for (ExcitationComponent ex : cExs) {
-         double weight = 100000;
+         double weight = 1;
          controller.addExciter (weight, ex);
       }
    }
@@ -1052,38 +903,8 @@ public class GaitModel extends RootModel {
    }
 
    /**
-    * Adds output probes related to joint contact for a number of specified
-    * joints.
-    * 
-    * @param start
-    * start time
-    * @param monitor
-    * @param stop
-    * stop time
-    * @param step
-    * step size
-    */
-   private void addJointContactOutputProbes (
-      double start, SmoothingMonitor monitor, double stop, double step) {
-      // Define candidates for joint contact output probes
-      ArrayList<String> candidates = new ArrayList<String> ();
-      candidates.add ("hip_r");
-      candidates.add ("hip_l");
-      candidates.add ("knee_r");
-      candidates.add ("knee_l");
-      candidates.add ("ankle_r");
-      candidates.add ("ankle_l");
-      myJoints.forEach (joint -> {
-         // create joint contact output probe for each match
-         if (candidates.contains (joint.getName ())) {
-            createJointContactProbe (joint, monitor, start, stop, step);
-         }
-      });
-   }
-
-   /**
     * Creates the default {@link NumericOutputProbe} of the
-    * {@link TrackingController} and fills a control panel with all
+    * {@link MotionTargetController} and fills a control panel with all
     * corresponding properties if specified.
     * 
     * @param motion
@@ -1094,7 +915,7 @@ public class GaitModel extends RootModel {
     * stop time
     */
    private void addNumOutputProbesAndPanel (
-      MarkerMotionData motion, TrackingController controller, double start,
+      MarkerMotionData motion, MotionTargetController controller, double start,
       double stop) {
       if (motion == null)
          return;
@@ -1107,7 +928,6 @@ public class GaitModel extends RootModel {
          addActuatorOutputProbes (controller, monitor, start, stop, step);
       }
       addJointAngleOutputProbes (start, monitor, stop, step);
-      addJointContactOutputProbes (start, monitor, stop, step);
       if (myDebug)
          addBodyForceOutputProbes (start, stop, step);
       addMonitor (monitor);
@@ -1115,11 +935,11 @@ public class GaitModel extends RootModel {
 
    /**
     * Defines the point targets of the {@link MotionTargetTerm} of the
-    * {@link TrackingController} and creates a {@link NumericInputProbe} for
+    * {@link MotionTargetController} and creates a {@link NumericInputProbe} for
     * each target.
     * 
     * @param controller
-    * TrackingController
+    * MotionTargetController
     * @param map
     * links the model marker names to the experimental marker names and their
     * weights
@@ -1133,7 +953,7 @@ public class GaitModel extends RootModel {
     * if one or multiple files don't exist
     */
    private void addPointTargetsAndProbes (
-      TrackingController controller, MarkerMapping map, MarkerMotionData motion,
+      MotionTargetController controller, MarkerMapping map, MarkerMotionData motion,
       double start, double stop)
       throws IOException {
       if (motion == null || map == null)
@@ -1180,7 +1000,7 @@ public class GaitModel extends RootModel {
     * {@code motion} to hand them to an IK solver later.
     * 
     * @param controller
-    * TrackingController
+    * MotionTargetController
     * @param targets
     * Collection of PointTargets
     * @param motion
@@ -1192,7 +1012,7 @@ public class GaitModel extends RootModel {
     * @return
     */
    private NumericInputProbe collectMarkerMotionData (
-      TrackingController controller, ArrayList<FrameMarker> targets,
+      MotionTargetController controller, ArrayList<FrameMarker> targets,
       MarkerMotionData motion, MarkerMapping map, double start, double stop) {
       NumericInputProbe targetProbe =
          InverseManager
@@ -1212,60 +1032,6 @@ public class GaitModel extends RootModel {
          targetProbe.addData (time, positions);
       }
       return targetProbe;
-   }
-
-   /**
-    * Adds a collision response {@code collResp} and behavior {@code collBehav}
-    * object for the compliant contact between {@code bodyA} and {@code bodyB},
-    * based on the given parameters {@code comp} and {@code damp}.
-    * 
-    * @param bodyA
-    * @param bodyB
-    * @param comp
-    * Compliance coefficient
-    * @param damp
-    * Damping coefficient
-    */
-   private void createCollision (
-      RigidBody bodyA, RigidBody bodyB, double comp, double damp) {
-      CollisionBehavior behavior;
-      behavior = myMech.setCollisionBehavior (bodyA, bodyB, true);
-      behavior.setCompliance (comp);
-      behavior.setDamping (damp);
-      myMech.setCollisionResponse (bodyA, bodyB);
-   }
-
-   /**
-    * Creates a {@link NumericInputProbe} for each {@link JointBase}
-    * {@code joint} coordinate specified by {@code prop} and fills it with the
-    * angles in {@code coords}.
-    * 
-    * @param joint
-    * member of {@code myJoints}
-    * @param coords
-    * {@link CoordinateData}
-    * @param prop
-    * joint coordinate
-    * @param start
-    * probe start time
-    * @param stop
-    * probe stop time
-    */
-   private void createCoordsInputProbe (
-      JointBase joint, CoordinateData coords, String prop, double start,
-      double stop) {
-      NumericInputProbe angle =
-         new NumericInputProbe (joint, prop, start, stop);
-      angle.setModel (myMech);
-      angle.setName (prop);
-      for (int i = 0; i < coords.numFrames (); i++) {
-         double time = coords.getFrameTime (i);
-         double[] coord = new double[1];
-         coord[0] = coords.getData (i, prop);
-         angle.addData (time, coord);
-      }
-      angle.setActive (true);
-      addInputProbe (angle);
    }
 
    /**
@@ -1374,7 +1140,7 @@ public class GaitModel extends RootModel {
     * Generates achievable positions for the PointTargets in {@code targets} by
     * solving an inverse kinematics problem. The calculated new PointTarget
     * positions are then used as actual target positions by the
-    * TrackingController.
+    * MotionTargetController.
     * 
     * @param targets
     * Collection of PointTargets
@@ -1405,42 +1171,6 @@ public class GaitModel extends RootModel {
       ikProbe.setActive (false);
       ikProbe.setBodiesNonDynamicIfActive (true);
       return posProbe;
-   }
-
-   /**
-    * Generates a {@link NumericMonitorProbe} for the specified {@code joint}
-    * that computes the current contact force at that joint.
-    * 
-    * @param joint
-    * joint to be evaluated
-    * @param monitor 
-    * @param start
-    * start time
-    * @param stop
-    * stop time
-    * @param step
-    * step size
-    */
-   private void createJointContactProbe (
-      JointBase joint, SmoothingMonitor monitor, double start, double stop,
-      double step) {
-      String probeName = joint.getName () + "_contactForce";
-      String filepath =
-         PathFinder
-            .getSourceRelativePath (
-               this, "/" + myName + "/Output/" + probeName + ".txt");
-      NumericMonitorProbe momProbe =
-         new NumericMonitorProbe (1, filepath, start, stop, step);
-      momProbe.setModel (myMech);
-      momProbe.setName (probeName);
-      momProbe.setInterpolationOrder (Interpolation.Order.Linear);
-      JointForceFunction force = new JointForceFunction (joint);
-      momProbe.setDataFunction (force);
-      ArrayList<String> labels = new ArrayList<String> ();
-      labels.add ("contact force");
-      momProbe.setLegendLabels (labels);
-      monitor.add (momProbe);
-      addOutputProbe (momProbe);
    }
 
    /**
@@ -1954,27 +1684,6 @@ public class GaitModel extends RootModel {
    }
 
    /**
-    * Returns an ArrayList of {@link MuscleComponent} objects for the muscle
-    * identifiers contained in {@code names}.
-    * 
-    * @param names
-    * String containing muscle names
-    * @return
-    */
-   private ArrayList<MuscleComponent> getMuscles (String[] names) {
-      HashSet<String> muscleNames = new HashSet<> ();
-      for (String name : names) {
-         muscleNames.add (name);
-      }
-      ArrayList<MuscleComponent> muscles = new ArrayList<> ();
-      for (MuscleComponent msc : myMuscles) {
-         if (muscleNames.contains (msc.getName ()))
-            muscles.add (msc);
-      }
-      return muscles;
-   }
-
-   /**
     * Queries all {@link MultiPointMuscle} objects from the current
     * {@link MechModel} and stores them in a global variable.
     * 
@@ -1993,25 +1702,7 @@ public class GaitModel extends RootModel {
             myMuscles.add (muscle);
          }
       });
-      //ComponentUtils.deleteComponentsAndDependencies (myMuscles);
-      //setSimpleMuscles (problemMuscles);
-      setMillardMuscles(problemMuscles);
-      //setSimpleMuscles (gluts);
-      setMillardMuscles (gluts);
-      //setSimpleMuscles (pelvisFemur);
-      setMillardMuscles (pelvisFemur);
-      //setSimpleMuscles (pelvisTibia);
-      setMillardMuscles (pelvisTibia);
-      //setSimpleMuscles (femurTibia);
-      setMillardMuscles (femurTibia);
-      //setSimpleMuscles (femurCalcn);
-      setMillardMuscles (femurCalcn);
-      //setSimpleMuscles (tibiaCalcn);
-      setMillardMuscles (tibiaCalcn);
-      //setSimpleMuscles (tibiaToes);
-      setMillardMuscles (tibiaToes);
-      //setSimpleMuscles (pelvisTorso);
-      setMillardMuscles (pelvisTorso);
+      ComponentUtils.deleteComponentsAndDependencies (myMuscles);
       return myMuscles;
    }
 
@@ -2052,16 +1743,11 @@ public class GaitModel extends RootModel {
       myForces = readForceFile (name);
       myCoords = readCoordsFile (name);
       // Inverse control
-      TrackingController controller = addControllerAndProps ();
+      MotionTargetController controller = addControllerAndProps ();
       addExcitersToController (controller);
       addPointTargetsAndProbes (controller, myMap, myMotion, start, stop);
       addForceInputProbes (myForces, start, stop, scale);
-      // Parametric control
-      // addCoordsInputProbes (myCoords, start, stop);
       // Add output probes
-      // TODO: Numeric Monitor Probes for later mesh evaluation (for cases,
-      // where the data is not simply collected but generated by a function
-      // within the probe itself
       addNumOutputProbesAndPanel (myMotion, controller, start, stop);
       // Stop simulation after last frame
       addBreakPoint (stop);
@@ -2339,23 +2025,6 @@ public class GaitModel extends RootModel {
       coll.setBilateralVertexContact (false);
       // Smooth vertex penetration contatcs
       coll.getSmoothVertexContacts ();
-      // Add contact interfaces
-      // RigidBody bodyA = (RigidBody)jt.getBodyA ();
-      // RigidBody bodyB = (RigidBody)jt.getBodyB ();
-      // Calculate compliant contact properties
-      // double comp = 1;
-      // double mass = bodyA.getMass () + bodyB.getMass ();
-      // double damp = 2 * 1 * Math.sqrt (1 / comp * mass);
-      // createCollision (bodyA, bodyB, comp, damp);
-      // Initialize the contact monitor to handle all individual collision
-      // responses
-      //String msgName = name + "/Output/" + name + "_message_file.txt";
-      //String msgPath =
-      //   ArtisynthPath.getSrcRelativePath (this, msgName).toString ();
-      //ContactMonitor contMonitor =
-      //   new ContactMonitor (coll.responses (), msgPath);
-      //contMonitor.setName ("Contact monitor");
-      //addMonitor (contMonitor);
    }
 
    /**
@@ -2364,7 +2033,7 @@ public class GaitModel extends RootModel {
     * path.
     * 
     * @param controller
-    * {@link TrackingController}
+    * {@link MotionTargetController}
     * @param start
     * start time
     * @param stop
@@ -2372,7 +2041,7 @@ public class GaitModel extends RootModel {
     * 
     */
    private void setDefaultOutputProbes (
-      TrackingController controller, double start, double stop) {
+      MotionTargetController controller, double start, double stop) {
       String path =
          PathFinder
             .getSourceRelativePath (
@@ -2422,70 +2091,6 @@ public class GaitModel extends RootModel {
       }
       jt.setCompliance (comp);
       jt.setDamping (damp);
-   }
-   
-   /**
-    * Takes a list of muscle names and resets their material to a millard
-    * muscle, which is based on the thelen muscle model.
-    * 
-    * @param names
-    * String array containing muscle names
-    * @return MuscleComponent with millard muscle material
-    */
-   private void setMillardMuscles (String[] names) {
-      setMillardMuscles (getMuscles (names));
-   }
-   
-   /**
-    * Performs muscle material conversion, if the original material is of type
-    * {@link EquilibriumAxialMuscle}, e.g. hill-type based muscle models.
-    * 
-    * @param muscles
-    * List of MuscleComponents
-    */
-   private void setMillardMuscles (ArrayList<MuscleComponent> muscles) {
-      for (MuscleComponent mc : muscles) {
-         AxialMaterial mat = mc.getMaterial ();
-         if (mat instanceof EquilibriumAxialMuscle) {
-            EquilibriumAxialMuscle emat = (EquilibriumAxialMuscle)mat;
-            Millard2012AxialMuscle mmat =
-               new Millard2012AxialMuscle (
-                  emat.getMaxIsoForce (), emat.getOptFibreLength (),
-                  emat.getTendonSlackLength (), emat.getOptPennationAngle ());
-            mc.setMaterial (mmat);
-         }
-      }
-   }
-
-   /**
-    * Takes a list of muscle names and resets their material to a simple axial
-    * muscle.
-    * 
-    * @param names
-    * String array containing muscle names
-    * @return MuscleComponent with simple axial material
-    */
-   private void setSimpleMuscles (String[] names) {
-      setSimpleMuscles (getMuscles (names));
-   }
-
-   /**
-    * Performs muscle material conversion, if the original material is of type
-    * {@link EquilibriumAxialMuscle}, e.g. hill-type based muscle models. The
-    * maximum force is 3*isometric force.
-    * 
-    * @param muscles
-    * List of MuscleComponents
-    */
-   private void setSimpleMuscles (List<MuscleComponent> muscles) {
-      for (MuscleComponent mc : muscles) {
-         AxialMaterial mat = mc.getMaterial ();
-         if (mat instanceof EquilibriumAxialMuscle) {
-            EquilibriumAxialMuscle emat = (EquilibriumAxialMuscle)mat;
-            mc.setMaterial (
-                  new SimpleAxialMuscle (0, 0, 3 * emat.getMaxIsoForce ()));
-         }
-      }
    }
 
    /**
@@ -2822,7 +2427,7 @@ public class GaitModel extends RootModel {
     * list of {@link FrameMarker} objects
     */
    private void writeProbesInfo (
-      StringBuilder output, TrackingController controller,
+      StringBuilder output, MotionTargetController controller,
       MarkerMotionData motion, MarkerMapping map, ForceData forces,
       RenderableComponentList<FrameMarker> marker) {
       output

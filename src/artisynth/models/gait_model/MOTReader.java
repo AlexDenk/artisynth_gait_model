@@ -12,9 +12,15 @@ import java.util.stream.Collectors;
 import maspack.matrix.*;
 
 /**
- * @author Alexander Denk Copyright (c) 2023-2024 <br>
- * (UDE) University of Duisburg-Essen <br>
- * Chair of Mechanics and Robotics <br>
+ * File importer for .mot files.
+ * <p>
+ * 
+ * @author Alexander Denk Copyright (c) 2025
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
  * alexander.denk@uni-due.de
  */
 public class MOTReader {

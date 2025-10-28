@@ -9,9 +9,15 @@ import maspack.matrix.Vector3d;
 import maspack.util.ReaderTokenizer;
 
 /**
- * @author Alexander Denk Copyright (c) 2023-2024 <br>
- * (UDE) University of Duisburg-Essen <br>
- * Chair of Mechanics and Robotics <br>
+ * TRC Reader with custom line handling.
+ * <p>
+ * 
+ * @author Alexander Denk Copyright (c) 2025
+ * <p>
+ * University of Duisburg-Essen
+ * <p>
+ * Chair of Mechanics and Robotics
+ * <p>
  * alexander.denk@uni-due.de
  */
 public class CustomTRCReader extends TRCReader {

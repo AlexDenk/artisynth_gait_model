@@ -17,7 +17,7 @@ import artisynth.core.modelbase.MonitorBase;
  * per collision response with the contact parameters written to file.
  * <p>
  * 
- * @author Alexander Denk Copyright (c) 2024
+ * @author Alexander Denk Copyright (c) 2025
  * <p>
  * University of Duisburg-Essen
  * <p>
@@ -25,7 +25,6 @@ import artisynth.core.modelbase.MonitorBase;
  * <p>
  * alexander.denk@uni-due.de
  */
-
 public class ContactMonitor extends MonitorBase {
    // ----------------------------Instance Fields------------------------------
    // Path to the file, where the contact history is written to

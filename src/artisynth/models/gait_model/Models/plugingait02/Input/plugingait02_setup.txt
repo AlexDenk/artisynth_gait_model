@@ -1,4 +1,4 @@
 Artisynth model setup file
-name	plugingait02
+name	EP010DR1980_BE_3Gang16
 side of 1st contact	left
 plate# of 1st contact	2
