@@ -52,7 +52,6 @@ import artisynth.core.mechmodels.Particle;
 import artisynth.core.mechmodels.Point;
 import artisynth.core.mechmodels.PointForce;
 import artisynth.core.mechmodels.RigidBody;
-import artisynth.core.mechmodels.UniversalJoint;
 import artisynth.core.mechmodels.Collidable.Collidability;
 import artisynth.core.mechmodels.MechSystemSolver.PosStabilization;
 import artisynth.core.modelbase.Controller;
@@ -64,26 +63,19 @@ import artisynth.core.probes.NumericOutputProbe;
 import artisynth.core.probes.TracingProbe;
 import artisynth.core.renderables.ColorBar;
 import artisynth.core.workspace.RootModel;
-import artisynth.models.JW_knee_model_net_15.JWKneeModelNet15.FEMStrainFunction;
-import artisynth.models.JW_knee_model_net_15.JWKneeModelNet15.FEMStressFunction;
-import artisynth.models.JW_knee_model_net_20RND.JWKneeModelNet20RND.FEMVonMisesFunction;
 import maspack.geometry.MeshFactory;
 import maspack.geometry.PolygonalMesh;
 import maspack.interpolation.Interpolation;
 import maspack.matrix.AxisAlignedRotation;
 import maspack.matrix.Point3d;
 import maspack.matrix.RigidTransform3d;
-import maspack.matrix.RotationMatrix3d;
 import maspack.matrix.SymmetricMatrix3d;
 import maspack.matrix.Vector3d;
 import maspack.matrix.VectorNd;
-import maspack.render.Renderer.DrawMode;
-import maspack.render.Renderer.FaceStyle;
 import maspack.render.RenderList;
 import maspack.render.RenderProps;
 import maspack.render.Renderer.AxisDrawStyle;
 import maspack.render.Renderer.PointStyle;
-
 import maspack.util.Clonable;
 import maspack.util.DoubleInterval;
 import maspack.util.PathFinder;
@@ -127,7 +119,7 @@ public class JWKneeModelNet30RND01 extends RootModel {
 
       myMech.setGravity (0, -9810, 0);
       // Intigrator Schrittgröße
-      setMaxStepSize(0.0005);                           
+      setMaxStepSize(0.00001);                           
       setMinStepSize(1e-8);                               // test? normal -7
       setAdaptiveStepping(true);
       
@@ -380,25 +372,13 @@ public class JWKneeModelNet30RND01 extends RootModel {
     myMech.addMeshBody(IntersectionTibiaMeniscusbody);     
     //######################################################################################## Marker points Calcaneus + Os cuneiforme ##########################
     //Create a fixed point in space for Achillesntendon to attach
- /*   
-    Particle Calcaneus = new Particle ("Calcaneus", 0, 390.0, 965.0, 782.0); 
-    Calcaneus.setName("Achilles_insertion");
-    myMech.addParticle (Calcaneus);
-    RenderProps.setSphericalPoints(Calcaneus, 2.0, Color.YELLOW);
-    Calcaneus.setDynamic (false);  
-*/   
+  
     cuneiforme = new Particle("Cuneiforme", 0, 390.0, 965.0, 850.0);
     cuneiforme.setName("MTA_insertion");
     myMech.addParticle(cuneiforme);
     RenderProps.setSphericalPoints(cuneiforme, 2.0, Color.YELLOW);
     cuneiforme.setDynamic(false);
- /*   
-    Particle AchillesPoint = new Particle ("AchillesPoint", 0, 390.0, 1100.0, 800.0); 
-    AchillesPoint.setName("AchillesPoint");
-    myMech.addParticle (AchillesPoint);
-    RenderProps.setSphericalPoints(AchillesPoint, 2.0, Color.YELLOW);
-    AchillesPoint.setDynamic (true);  
-*/   
+  
     
 //  #####################################################################################  white background  ##########################
 /*   PolygonalMesh planeMesh = MeshFactory.createPlane(4000, 4000, 1, 1);
@@ -413,7 +393,7 @@ public class JWKneeModelNet30RND01 extends RootModel {
     backgroundPlane.setSelectable(false);
     */   
 //  ###################################################################################################################################
-      // Add a color bar
+      // Add the color bar
       createColorBar ();
 
       // Initialize writerfile to record Displacement, Stress, Strain of nodes
@@ -734,7 +714,7 @@ public class JWKneeModelNet30RND01 extends RootModel {
       //fem.setStressPlotRanging (Ranging.Auto);
       fem.setSurfaceRendering(SurfaceRender.Stress);
       fem.setStressPlotRanging(Ranging.Fixed);
-      fem.setStressPlotRange(new DoubleInterval(0.0, 100000.0)); // Your limits here
+      fem.setStressPlotRange(new DoubleInterval(0.0, 100000.0)); 
           
       // RenderProps.setVisible(fem.getNodes(), false);
       // RenderProps.setVisible(fem.getElements(), false);
@@ -954,7 +934,7 @@ private void addAchillesTendon() {
    // Create the dynamic muscle attachment point
    Particle achillesPoint = new Particle("AchillesPoint", 0.01, 390.0, 1100.0, 800.0);
    achillesPoint.setName("AchillesPoint");
-   achillesPoint.setDynamic(true); // This can move under forces
+   achillesPoint.setDynamic(true); 
    myMech.addParticle(achillesPoint);
    this.achillesPoint = achillesPoint;
    
@@ -1217,7 +1197,7 @@ private void addGastrocnemiusMuscles() {
       
       FrameMarker gastrocLatVia1 = myMech.addFrameMarker(Femur, new Point3d(343.21899, 1398.6849, 819.1441));
       gastrocLatVia1.setName("Gastroc_Lat_Via1");
-      RenderProps.setSphericalPoints(gastrocLatVia1, 1.5, Color.CYAN); // Different color for visibility
+      RenderProps.setSphericalPoints(gastrocLatVia1, 1.5, Color.CYAN); 
       
       FrameMarker gastrocLatVia2 = myMech.addFrameMarker(Femur, new Point3d(343.21899, 1395.6849, 814.1441));
       gastrocLatVia2.setName("Gastroc_Lat_Via2");
@@ -1225,14 +1205,12 @@ private void addGastrocnemiusMuscles() {
       
       FrameMarker gastrocMedVia1 = myMech.addFrameMarker(Femur, new Point3d(382.71698, 1398.064, 822.1026));
       gastrocMedVia1.setName("Gastroc_Med_Via1");
-      RenderProps.setSphericalPoints(gastrocMedVia1, 1.5, Color.CYAN); // Different color for visibility
+      RenderProps.setSphericalPoints(gastrocMedVia1, 1.5, Color.CYAN);
       
       FrameMarker gastrocMedVia2 = myMech.addFrameMarker(Femur, new Point3d(382.71698, 1395.064, 816.1026));
       gastrocLatVia2.setName("Gastroc_Med_Via2");
       RenderProps.setSphericalPoints(gastrocMedVia2, 1.5, Color.CYAN);
       
-      // 2. Add points to the muscle IN THE CORRECT ORDER:
-      // Origin -> Via Point 1 -> Via Point 2 -> Insertion
       gastrocLat.addPoint(gastrocLatOrigin);
       gastrocLat.addPoint(gastrocLatVia1);
       gastrocLat.addPoint(gastrocLatVia2);
@@ -1244,7 +1222,7 @@ private void addGastrocnemiusMuscles() {
       muscles.add(gastrocLat);  // adds to the list
       myMech.addMultiPointSpring(gastrocLat);
       RenderProps.setCylindricalLines (gastrocLat, 0.8, Color.RED);
-      // --- END OF MODIFIED SECTION ---
+      
           
       MultiPointSpring gastrocMed = new MultiPointSpring("Gastrocnemius_Medial");
       gastrocMed.addPoint(gastrocMedOrigin);
@@ -1260,10 +1238,10 @@ private void addGastrocnemiusMuscles() {
       myMech.addMultiPointSpring(gastrocMed);
       RenderProps.setCylindricalLines (gastrocMed, 0.8, Color.RED);
       
-      // Wrapping setup for both muscles
+     
       gastrocLat.addWrappable(Femur);
       gastrocLat.addWrappable(TibiaFibula);
-      gastrocLat.setSegmentWrappable(10); // This setting applies to all segments
+      gastrocLat.setSegmentWrappable(10); 
       gastrocMed.addWrappable(Femur);
       gastrocMed.addWrappable(TibiaFibula);
       gastrocMed.setSegmentWrappable(10);
@@ -1318,11 +1296,11 @@ private void addGastrocnemiusMuscles() {
 
       for (int i = 0; i < joint.numConstraints(); i++) {
           if (i == rotationConstraintIndex) {
-              // Apply softer compliance to the rotational constraint
+              // apply softer compliance to the rotational constraint
               comp.set(i, rotCompliance);
               damp.set(i, rotDamping);
           } else {
-              // Apply extremely stiff compliance to LOCK the other constraints
+              // extremely stiff compliance to LOCK the other constraints
               comp.set(i, lockCompliance);   
               damp.set(i, lockDamping);      
           }
@@ -1368,7 +1346,7 @@ private void addGastrocnemiusMuscles() {
    private void setCollisionManager () {
       CollisionManager cm = myMech.getCollisionManager ();
       RenderProps.setVisible (cm, false);//
-      cm.setReduceConstraints (true);           //indicates that the system should try to reduce the number of contacts between bodies in order to try and remove redundant contacts
+      cm.setReduceConstraints (true);           
       cm.setDrawContactForces (false);
       cm.setDrawFrictionForces (false);
       cm.setContactForceLenScale (0.1);
@@ -1431,7 +1409,7 @@ private void addGastrocnemiusMuscles() {
 */
    
 // Add Von Mises writer declaration
-// Add Von Mises writer declaration
+
 public PrintWriter writerStress;
 public PrintWriter writerStrain;
 public PrintWriter writerMises;  
@@ -1510,7 +1488,7 @@ private void initializeTargetNodes() {
     for (FemNode3d node : targetNodes) {
         System.out.println("  Node: " + node.getNumber());
     }
-    // Make selected nodes visible
+    
     for (FemNode3d node : targetNodes) {
         System.out.println("  Node: " + node.getNumber());
         RenderProps.setPointStyle(node, PointStyle.SPHERE);
@@ -1544,7 +1522,7 @@ public class FEMStressFunction implements DataFunction, Clonable {
     }
 }
 
-// ADJUSTED: Clean strain output
+
 public class FEMStrainFunction implements DataFunction, Clonable {
     public void eval(VectorNd vec, double t, double trel) {
         writerStrain.println("Time: " + t);
@@ -1568,7 +1546,7 @@ public class FEMStrainFunction implements DataFunction, Clonable {
     }
 }
 
-// UNCHANGED: Von Mises function
+
 public class FEMVonMisesFunction implements DataFunction, Clonable {
     public void eval(VectorNd vec, double t, double trel) {
         for (int i = 0; i < targetNodes.size(); i++) {
