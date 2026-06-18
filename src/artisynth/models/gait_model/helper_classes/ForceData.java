@@ -1,4 +1,4 @@
-package artisynth.models.gait_model;
+package artisynth.models.gait_model.helper_classes;
 
 import java.util.ArrayList;
 import java.util.Collection;

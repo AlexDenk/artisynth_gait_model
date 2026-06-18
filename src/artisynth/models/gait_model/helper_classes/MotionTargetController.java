@@ -1,4 +1,4 @@
-package artisynth.models.gait_model;
+package artisynth.models.gait_model.helper_classes;
 
 import java.awt.Color;
 
@@ -10,7 +10,7 @@ import artisynth.core.mechmodels.ExcitationComponent;
 import artisynth.core.mechmodels.MechModel;
 import artisynth.core.mechmodels.MultiPointMuscle;
 import artisynth.core.mechmodels.Muscle;
-import artisynth.models.gait_model.CoordinateActuator;
+import artisynth.models.gait_model.helper_classes.CoordinateActuator;
 
 import maspack.render.RenderProps;
 import maspack.util.DoubleInterval;
