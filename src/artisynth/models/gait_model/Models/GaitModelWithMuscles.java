@@ -1,4 +1,4 @@
-package artisynth.models.gait_model.models;
+package artisynth.models.gait_model.Models;
 
 import java.awt.Color;
 import java.io.BufferedReader;
