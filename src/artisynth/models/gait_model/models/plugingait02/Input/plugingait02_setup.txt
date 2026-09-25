@@ -1,0 +1,4 @@
+Artisynth model setup file
+name	plugingait02
+side of 1st contact	left
+plate# of 1st contact	2

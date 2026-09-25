@@ -31,13 +31,13 @@ import maspack.util.DoubleInterval;
  * health.
  * <p>
  * 
- * @author Alexander Denk Copyright (c) 2026
+ * @author Alexander Graf Copyright (c) 2026
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.denk@uni-due.de
+ * alexander.graf-lmr@uni-due.de
  */
 public class FeasibleQPSolver extends QPSolver {
    // Relative tolerance on the equality residual

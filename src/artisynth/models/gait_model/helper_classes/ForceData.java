@@ -8,13 +8,13 @@ import maspack.matrix.Vector3d;
  * File format to store force data specified by .mot files.
  * <p>
  * 
- * @author Alexander Denk Copyright (c) 2025
+ * @author Alexander Graf Copyright (c) 2026
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.denk@uni-due.de
+ * alexander.graf-lmr@uni-due.de
  */
 public class ForceData {
       protected ArrayList<ArrayList<Vector3d>> myForceData = new ArrayList<> ();

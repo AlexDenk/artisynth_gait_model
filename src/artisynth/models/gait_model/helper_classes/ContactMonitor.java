@@ -38,13 +38,13 @@ import maspack.matrix.VectorNd;
  * aggregated per-node force / pressure table is appended as well.
  * <p>
  *
- * @author Alexander Denk Copyright (c) 2026
+ * @author Alexander Graf Copyright (c) 2026
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.denk@uni-due.de
+ * alexander.graf-lmr@uni-due.de
  */
 
 public class ContactMonitor extends MonitorBase {
@@ -248,13 +248,13 @@ public class ContactMonitor extends MonitorBase {
          .append (
             "%%-------------------- CONTACT HISTORY FILE ------------------%%\n")
          .append (
-            "%% Author: Alexander Denk, Copyright (c) 2026                 %%\n")
+            "%% Author: Alexander Graf, Copyright (c) 2026                 %%\n")
          .append (
             "%% (UDE) University of Duisburg-Essen                         %%\n")
          .append (
             "%% Chair of Mechanics and Robotics                            %%\n")
          .append (
-            "%% alexander.denk@uni-due.de                                  %%\n")
+            "%% alexander.graf-lmr@uni-due.de                              %%\n")
          .append (
             "%% NodeID: integer = FEM node number, v<idx> = mesh vertex    %%\n")
          .append (
