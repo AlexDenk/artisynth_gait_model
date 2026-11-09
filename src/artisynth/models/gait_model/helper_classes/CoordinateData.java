@@ -4,16 +4,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * File format to store coordinate data specified by .mot files.
+ * The coordinate data class...
  * <p>
- * 
- * @author Alexander Graf Copyright (c) 2026
+ * @author Alexander Denk Copyright (c) 2025
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.graf-lmr@uni-due.de
+ * alexander.denk@uni-due.de
  */
 public class CoordinateData {
    protected ArrayList<ArrayList<Double>> myCoordData = new ArrayList<> ();

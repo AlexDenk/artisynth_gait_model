@@ -1,4 +1,4 @@
-PathFileType	4	(X/Y/Z)
+PathFileType	4	(X/Y/Z)	
 DataRate	CameraRate	NumFrames	NumMarkers	Units	OrigDataRate	OrigDataStartFrame	OrigNumFrames
 100	100	103	41	m	100	0	103
 Frame#	Time	LFHD			RFHD			LBHD			RBHD			C7			T10			CLAV			STRN			RBAK			LSHO			LUPA			LELB			LFRM			LWRA			LWRB			LFIN			RSHO			RUPA			RELB			RFRM			RWRA			RWRB			RFIN			LASI			RASI			LPSI			RPSI			LTHI			LKNE			LTIB			LANK			LTOE			LBTO			LHEE			RKNE			RTIB			RANK			RTOE			RBTO			RHEE			RTHI			

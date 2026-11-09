@@ -1,8 +1,7 @@
+# OpenSim-based lower-limb gait model [![License](https://img.shields.io/badge/License-BSD%203--Clause-green.svg)](https://opensource.org/license/BSD-3-Clause)
+This repository holds a calibrated lower-body model based on the OpenSim model published by [Tim Dorn](https://simtk.org/frs/?group_id=433). The model was built using the freely available 3D modelling platform [ArtiSynth](https://www.artisynth.org/Main/HomePage). Additional artisynth models published by the developers can be found here: [artisynth_models](https://github.com/artisynth/artisynth_models). 
 
-# OpenSim-based lower-limb gait model
-This repository holds the current state of a lower-body model based on the OpenSim model published by [Tim Dorn](https://simtk.org/frs/?group_id=433). The model was built using the freely available 3D modelling platform [ArtiSynth](https://www.artisynth.org/Main/HomePage). Additional artisynth models published by the developers can be found here: [artisynth_models](https://github.com/artisynth/artisynth_models). 
-
-The model comes in two variations: including muscles (GaitModelWithMuscles) and excluding muscles (GaitModelWithoutMuscles). In the latter case, the model is purely driven by ideal joint actuators in the direction of each generalized coordinate (mostly joint angles), similar to the coordinate actuators used by OpenSim. The model is intended for combined multibody-finite element simulations subject to contact and constraint definitions. It contains muscles and a tracking controller, that solves for muscle activations based on experimental marker trajectories and ground reaction forces. As this project and research progresses we are continuously improving and updating this model and are open to suggestions for improvements and new potential applications.
+The model is intended for combined multibody-finite element simulations subject to contact and constraint definitions. It contains muscles and a tracking controller, that solves for muscle activations based on experimental marker trajectories and ground reaction forces. As this project and research progresses we are continuously improving and updating this model and are open to suggestions for improvements and new potential applications.
 
 If you use the model or parts of it in your research, please cite the following references:
 > A. Denk, W. Kowalczyk. Lower Limb Multibody Model built in ArtiSynth for the Use in Coupled Multibody Finite Element Simulations. 95th Annual Meeting of the International Association of Applied Mathematics and Mechanics - GAMM, Poznan (Poland), April 07th - 11th 2025
@@ -17,6 +16,9 @@ The image shows the generated multibody model controlled by experimental marker 
 * Additional Java classes to read and process all related files
 * The [Plug-in Gait model](https://simtk.org/frs/?group_id=433) using the Plug-in Gait full body markerset from Vicon Nexus and all necessary geometries.
 * Two experimental datasets named plugingait01 and plugingait02 both containing experimental marker trajectories and ground reaction forces of one subject (m., 35 years, 70 kg).
+
+## How to use the model
+The model provides public flags to set several simulation properties, which all can be called externally, e.g. from MATLAB. To run the model on Inverse Kinematics, call setUseIKSolely(true) after loading the model. To run the model with idealised joint actuators, call setUseCASolely (true) after loading the model.
 
 ## License
 This source code is licensed under the license found in the [LICENSE file](LICENSE) in the root directory of this source tree.

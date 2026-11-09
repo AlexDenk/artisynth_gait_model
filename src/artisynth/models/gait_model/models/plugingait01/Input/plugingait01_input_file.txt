@@ -1,9 +1,14 @@
 %%------------------------ INPUT FILE ------------------------%%
-%% Author: Alexander Graf, Copyright (c) 2025                 %%
+%% Author: Alexander Graf, Copyright (c) 2026                 %%
 %% (UDE) University of Duisburg-Essen                         %%
 %% Chair of Mechanics and Robotics                            %%
-%% alexander.graf-lmr@uni-due.de                              %%
+%% alexander.graf-lmr@uni-due.de                                  %%
 %%------------------------------------------------------------%%
+
+PROVENANCE INFORMATION
+Core version: artisynth_core_3.9
+Core revision: qpsolver-equality-retry 7ec50dd9
+Model revision: main 51a6b58b
 
 %%GENERAL SIMULATION PARAMETERS%%
 %%------------------------------------------------------------%%
@@ -15,6 +20,7 @@ Max Iterations: 20
 Max Tolerance: 0.01
 Matrix Solver: Pardiso
 Hybrid Solving enabled: false
+Fictitious Jacobian forces: true
 
 PHYSICS
 Frame Damping: 0.0
@@ -48744,7 +48750,1609 @@ Damping: Inf Inf Inf Inf Inf Inf
 0 DOF clavicle_weld_l     [-70.0, 70.0] 	Type: ROTARY
 
 MUSCLES
-Number of muscles: 0
+Number of muscles: 92
+
+Name: glut_med1_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 819.0
+Rest length: 0.127
+Opt fiber length: 0.056
+Tendon slack length: 0.081
+Number of points: 2
+Point 0 FrameMarker            0.369 1.041 0.124  
+Point 1 FrameMarker            0.394 0.937 0.211  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_med2_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 573.0
+Rest length: 0.137
+Opt fiber length: 0.088
+Tendon slack length: 0.055
+Number of points: 2
+Point 0 FrameMarker            0.328 1.060 0.173  
+Point 1 FrameMarker            0.391 0.944 0.213  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_med3_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 653.0
+Rest length: 0.115
+Opt fiber length: 0.068
+Tendon slack length: 0.055
+Number of points: 2
+Point 0 FrameMarker            0.323 1.030 0.216  
+Point 1 FrameMarker            0.389 0.947 0.218  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_min1_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 270.0
+Rest length: 0.087
+Opt fiber length: 0.072
+Tendon slack length: 0.017
+Number of points: 2
+Point 0 FrameMarker            0.356 1.002 0.137  
+Point 1 FrameMarker            0.398 0.934 0.195  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_min2_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 285.0
+Rest length: 0.087
+Opt fiber length: 0.059
+Tendon slack length: 0.027
+Number of points: 2
+Point 0 FrameMarker            0.352 1.006 0.155  
+Point 1 FrameMarker            0.397 0.935 0.198  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_min3_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 323.0
+Rest length: 0.091
+Opt fiber length: 0.040
+Tendon slack length: 0.054
+Number of points: 2
+Point 0 FrameMarker            0.340 1.008 0.177  
+Point 1 FrameMarker            0.395 0.938 0.201  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: semimem_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1288.0
+Rest length: 0.454
+Opt fiber length: 0.088
+Tendon slack length: 0.394
+Number of points: 3
+Point 0 FrameMarker            0.336 0.920 0.228  
+Point 1 JointConditionalMarker 0.271 0.512 0.323  [-0.558505,0.174533]
+Point 2 FrameMarker            0.270 0.496 0.322  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: semiten_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 410.0
+Rest length: 0.510
+Opt fiber length: 0.221
+Tendon slack length: 0.281
+Number of points: 5
+Point 0 FrameMarker            0.327 0.908 0.238  
+Point 1 JointConditionalMarker 0.267 0.523 0.326  [-0.331613,0.174533]
+Point 2 FrameMarker            0.265 0.494 0.330  
+Point 3 FrameMarker            0.264 0.461 0.320  
+Point 4 FrameMarker            0.269 0.433 0.318  
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: bifemlh_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 896.0
+Rest length: 0.461
+Opt fiber length: 0.120
+Tendon slack length: 0.358
+Number of points: 3
+Point 0 FrameMarker            0.335 0.916 0.235  
+Point 1 FrameMarker            0.325 0.507 0.331  
+Point 2 FrameMarker            0.328 0.483 0.336  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: bifemsh_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 804.0
+Rest length: 0.270
+Opt fiber length: 0.190
+Tendon slack length: 0.098
+Number of points: 3
+Point 0 FrameMarker            0.347 0.721 0.227  
+Point 1 FrameMarker            0.325 0.507 0.331  
+Point 2 FrameMarker            0.328 0.483 0.336  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: sar_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 156.0
+Rest length: 0.618
+Opt fiber length: 0.564
+Tendon slack length: 0.109
+Number of points: 5
+Point 0 FrameMarker            0.371 1.005 0.102  
+Point 1 FrameMarker            0.262 0.572 0.257  
+Point 2 FrameMarker            0.253 0.491 0.294  
+Point 3 FrameMarker            0.254 0.468 0.292  
+Point 4 FrameMarker            0.269 0.433 0.290  
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: add_long_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 627.0
+Rest length: 0.234
+Opt fiber length: 0.150
+Tendon slack length: 0.119
+Number of points: 2
+Point 0 FrameMarker            0.269 0.919 0.144  
+Point 1 FrameMarker            0.347 0.721 0.227  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_brev_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 429.0
+Rest length: 0.145
+Opt fiber length: 0.143
+Tendon slack length: 0.022
+Number of points: 2
+Point 0 FrameMarker            0.272 0.915 0.173  
+Point 1 FrameMarker            0.361 0.818 0.209  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_mag1_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 381.0
+Rest length: 0.125
+Opt fiber length: 0.094
+Tendon slack length: 0.065
+Number of points: 2
+Point 0 FrameMarker            0.285 0.891 0.190  
+Point 1 FrameMarker            0.365 0.818 0.216  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_mag2_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 343.0
+Rest length: 0.210
+Opt fiber length: 0.133
+Tendon slack length: 0.132
+Number of points: 2
+Point 0 FrameMarker            0.292 0.891 0.199  
+Point 1 FrameMarker            0.345 0.702 0.231  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_mag3_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 488.0
+Rest length: 0.372
+Opt fiber length: 0.144
+Tendon slack length: 0.273
+Number of points: 2
+Point 0 FrameMarker            0.313 0.901 0.225  
+Point 1 FrameMarker            0.278 0.540 0.257  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: tfl_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 233.0
+Rest length: 0.579
+Opt fiber length: 0.103
+Tendon slack length: 0.460
+Number of points: 4
+Point 0 FrameMarker            0.371 1.031 0.115  
+Point 1 FrameMarker            0.401 0.830 0.181  
+Point 2 FrameMarker            0.342 0.516 0.279  
+Point 3 FrameMarker            0.330 0.476 0.302  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: pect_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 266.0
+Rest length: 0.111
+Opt fiber length: 0.107
+Tendon slack length: 0.035
+Number of points: 2
+Point 0 FrameMarker            0.299 0.929 0.151  
+Point 1 FrameMarker            0.357 0.861 0.212  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: grac_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 162.0
+Rest length: 0.485
+Opt fiber length: 0.388
+Tendon slack length: 0.139
+Number of points: 4
+Point 0 FrameMarker            0.288 0.890 0.191  
+Point 1 JointConditionalMarker 0.253 0.512 0.309  [-0.436332,0.174533]
+Point 2 FrameMarker            0.253 0.489 0.313  
+Point 3 FrameMarker            0.268 0.443 0.308  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: glut_max1_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 573.0
+Rest length: 0.210
+Opt fiber length: 0.149
+Tendon slack length: 0.131
+Number of points: 4
+Point 0 FrameMarker            0.324 1.082 0.206  
+Point 1 FrameMarker            0.348 1.023 0.221  
+Point 2 FrameMarker            0.370 0.930 0.235  
+Point 3 FrameMarker            0.379 0.892 0.226  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: glut_max2_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 819.0
+Rest length: 0.222
+Opt fiber length: 0.155
+Tendon slack length: 0.134
+Number of points: 4
+Point 0 FrameMarker            0.315 1.039 0.229  
+Point 1 FrameMarker            0.356 0.970 0.237  
+Point 2 FrameMarker            0.358 0.900 0.237  
+Point 3 FrameMarker            0.372 0.841 0.224  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: glut_max3_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 552.0
+Rest length: 0.249
+Opt fiber length: 0.152
+Tendon slack length: 0.153
+Number of points: 4
+Point 0 FrameMarker            0.269 0.990 0.264  
+Point 1 FrameMarker            0.309 0.916 0.267  
+Point 2 FrameMarker            0.339 0.843 0.233  
+Point 3 FrameMarker            0.370 0.796 0.224  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: iliacus_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1073.0
+Rest length: 0.217
+Opt fiber length: 0.105
+Tendon slack length: 0.105
+Number of points: 5
+Point 0 FrameMarker            0.335 1.049 0.154  
+Point 1 FrameMarker            0.332 0.950 0.126  
+Point 2 JointConditionalMarker 0.334 0.925 0.132  [-1.5708,0.785398]
+Point 3 FrameMarker            0.342 0.888 0.186  
+Point 4 FrameMarker            0.344 0.885 0.211  
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: psoas_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1113.0
+Rest length: 0.272
+Opt fiber length: 0.104
+Tendon slack length: 0.167
+Number of points: 5
+Point 0 FrameMarker            0.274 1.099 0.152  
+Point 1 FrameMarker            0.326 0.947 0.125  
+Point 2 JointConditionalMarker 0.334 0.925 0.132  [-1.5708,0.785398]
+Point 3 FrameMarker            0.340 0.891 0.185  
+Point 4 FrameMarker            0.342 0.887 0.210  
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: quad_fem_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 381.0
+Rest length: 0.073
+Opt fiber length: 0.057
+Tendon slack length: 0.025
+Number of points: 2
+Point 0 FrameMarker            0.317 0.901 0.228  
+Point 1 FrameMarker            0.368 0.917 0.229  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: gem_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 164.0
+Rest length: 0.068
+Opt fiber length: 0.025
+Tendon slack length: 0.041
+Number of points: 2
+Point 0 FrameMarker            0.334 0.935 0.219  
+Point 1 FrameMarker            0.384 0.944 0.198  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: peri_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 444.0
+Rest length: 0.142
+Opt fiber length: 0.027
+Tendon slack length: 0.120
+Number of points: 3
+Point 0 FrameMarker            0.283 1.020 0.241  
+Point 1 FrameMarker            0.326 0.991 0.219  
+Point 2 FrameMarker            0.384 0.944 0.199  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: rect_fem_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1169.0
+Rest length: 0.444
+Opt fiber length: 0.123
+Tendon slack length: 0.336
+Number of points: 3
+Point 0 FrameMarker            0.347 0.976 0.124  
+Point 1 JointConditionalMarker 0.313 0.512 0.241  [-2.61799,-1.45997]
+Point 2 JointBasedMovingMarker 0.320 0.516 0.206  
+Cubic hermite spline knots X Y
+x location
+-2.094 0.016
+-2.000 0.018
+-1.571 0.028
+-1.458 0.030
+-1.396 0.031
+-1.047 0.037
+-0.698 0.042
+-0.526 0.045
+-0.349 0.048
+-0.175 0.053
+0.000 0.062
+0.000 0.062
+0.000 0.062
+0.028 0.063
+0.087 0.067
+0.175 0.073
+2.094 0.057
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.023
+-2.000 0.024
+-1.571 0.025
+-1.458 0.025
+-1.396 0.025
+-1.047 0.025
+-0.698 0.024
+-0.526 0.024
+-0.349 0.023
+-0.175 0.023
+0.000 0.021
+0.000 0.021
+0.000 0.021
+0.028 0.021
+0.087 0.019
+0.175 0.016
+2.094 -0.067
+
+Cubic hermite spline knots X Y
+z location
+-2.094 0.001
+-0.960 0.001
+0.175 0.001
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: vas_med_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1294.0
+Rest length: 0.187
+Opt fiber length: 0.097
+Tendon slack length: 0.137
+Number of points: 5
+Point 0 FrameMarker            0.344 0.720 0.216  
+Point 1 FrameMarker            0.324 0.644 0.207  
+Point 2 JointConditionalMarker 0.298 0.509 0.235  [-2.61799,-1.21004]
+Point 3 JointConditionalMarker 0.293 0.490 0.250  [-2.61799,-1.78006]
+Point 4 JointBasedMovingMarker 0.301 0.520 0.208  
+Cubic hermite spline knots X Y
+x location
+-2.094 0.010
+-2.000 0.012
+-1.571 0.022
+-1.458 0.024
+-1.396 0.025
+-1.047 0.031
+-0.698 0.036
+-0.526 0.039
+-0.349 0.043
+-0.175 0.048
+0.000 0.056
+0.000 0.056
+0.000 0.056
+0.028 0.058
+0.087 0.061
+0.175 0.068
+2.094 0.063
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.022
+-2.000 0.023
+-1.571 0.024
+-1.458 0.024
+-1.396 0.024
+-1.047 0.024
+-0.698 0.023
+-0.526 0.023
+-0.349 0.023
+-0.175 0.023
+0.000 0.022
+0.000 0.022
+0.000 0.022
+0.028 0.022
+0.087 0.021
+0.175 0.018
+2.094 -0.066
+
+Cubic hermite spline knots X Y
+z location
+-2.094 -0.015
+0.000 -0.015
+2.094 -0.015
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: vas_int_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1365.0
+Rest length: 0.198
+Opt fiber length: 0.094
+Tendon slack length: 0.148
+Number of points: 4
+Point 0 FrameMarker            0.362 0.734 0.199  
+Point 1 FrameMarker            0.359 0.716 0.198  
+Point 2 JointConditionalMarker 0.317 0.511 0.241  [-2.61799,-1.42]
+Point 3 JointBasedMovingMarker 0.320 0.523 0.210  
+Cubic hermite spline knots X Y
+x location
+-2.094 0.008
+-2.000 0.011
+-1.571 0.020
+-1.458 0.022
+-1.396 0.023
+-1.047 0.029
+-0.698 0.035
+-0.526 0.038
+-0.349 0.041
+-0.175 0.047
+0.000 0.055
+0.000 0.055
+0.000 0.055
+0.028 0.057
+0.087 0.061
+0.175 0.068
+2.094 0.065
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.026
+-2.000 0.026
+-1.571 0.027
+-1.458 0.027
+-1.396 0.028
+-1.047 0.027
+-0.698 0.027
+-0.526 0.026
+-0.349 0.026
+-0.175 0.026
+0.000 0.025
+0.000 0.025
+0.000 0.025
+0.028 0.025
+0.087 0.024
+0.175 0.022
+2.094 -0.069
+
+Cubic hermite spline knots X Y
+z location
+-2.094 0.002
+0.000 0.002
+2.094 0.002
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: vas_lat_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1871.0
+Rest length: 0.218
+Opt fiber length: 0.091
+Tendon slack length: 0.171
+Number of points: 5
+Point 0 FrameMarker            0.362 0.747 0.223  
+Point 1 FrameMarker            0.366 0.664 0.220  
+Point 2 JointConditionalMarker 0.333 0.510 0.243  [-2.61799,-1.21004]
+Point 3 JointConditionalMarker 0.327 0.491 0.259  [-2.61799,-1.92004]
+Point 4 JointBasedMovingMarker 0.336 0.515 0.212  
+Cubic hermite spline knots X Y
+x location
+-2.094 0.014
+-2.000 0.017
+-1.571 0.026
+-1.458 0.028
+-1.396 0.029
+-1.047 0.035
+-0.698 0.041
+-0.526 0.044
+-0.349 0.047
+-0.175 0.052
+0.000 0.060
+0.000 0.060
+0.000 0.060
+0.028 0.061
+0.087 0.065
+0.175 0.071
+2.094 0.058
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.022
+-2.000 0.022
+-1.571 0.023
+-1.458 0.023
+-1.396 0.023
+-1.047 0.023
+-0.698 0.022
+-0.526 0.022
+-0.349 0.022
+-0.175 0.021
+0.000 0.020
+0.000 0.020
+0.000 0.020
+0.028 0.019
+0.087 0.018
+0.175 0.015
+2.094 -0.065
+
+Cubic hermite spline knots X Y
+z location
+-2.094 0.017
+0.000 0.017
+2.094 0.017
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: med_gas_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1558.0
+Rest length: 0.503
+Opt fiber length: 0.067
+Tendon slack length: 0.435
+Number of points: 3
+Point 0 FrameMarker            0.275 0.537 0.287  
+Point 1 JointConditionalMarker 0.270 0.531 0.300  [-0.785398,0.174533]
+Point 2 FrameMarker            0.231 0.107 0.551  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: lat_gas_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 683.0
+Rest length: 0.499
+Opt fiber length: 0.071
+Tendon slack length: 0.424
+Number of points: 3
+Point 0 FrameMarker            0.329 0.534 0.302  
+Point 1 JointConditionalMarker 0.326 0.529 0.312  [-0.785398,0.174533]
+Point 2 FrameMarker            0.231 0.107 0.551  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: soleus_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 3549.0
+Rest length: 0.325
+Opt fiber length: 0.056
+Tendon slack length: 0.279
+Number of points: 2
+Point 0 FrameMarker            0.289 0.378 0.359  
+Point 1 FrameMarker            0.231 0.107 0.551  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: tib_post_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 1588.0
+Rest length: 0.386
+Opt fiber length: 0.035
+Tendon slack length: 0.346
+Number of points: 4
+Point 0 FrameMarker            0.284 0.400 0.355  
+Point 1 FrameMarker            0.218 0.138 0.492  
+Point 2 FrameMarker            0.217 0.098 0.500  
+Point 3 FrameMarker            0.226 0.069 0.467  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: flex_dig_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 310.0
+Rest length: 0.484
+Opt fiber length: 0.038
+Tendon slack length: 0.447
+Number of points: 8
+Point 0 FrameMarker            0.271 0.331 0.388  
+Point 1 FrameMarker            0.221 0.138 0.493  
+Point 2 FrameMarker            0.218 0.095 0.498  
+Point 3 FrameMarker            0.226 0.072 0.474  
+Point 4 FrameMarker            0.290 0.018 0.391  
+Point 5 FrameMarker            0.298 0.013 0.381  
+Point 6 FrameMarker            0.313 0.006 0.351  
+Point 7 FrameMarker            0.320 0.002 0.335  
+Number of segments: 7
+Number of muscle wrappings: 0
+
+Name: flex_hal_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 322.0
+Rest length: 0.470
+Opt fiber length: 0.048
+Tendon slack length: 0.425
+Number of points: 7
+Point 0 FrameMarker            0.295 0.302 0.409  
+Point 1 FrameMarker            0.222 0.137 0.498  
+Point 2 FrameMarker            0.220 0.093 0.507  
+Point 3 FrameMarker            0.235 0.052 0.443  
+Point 4 FrameMarker            0.250 0.019 0.373  
+Point 5 FrameMarker            0.258 0.010 0.352  
+Point 6 FrameMarker            0.277 -0.006 0.312 
+Number of segments: 6
+Number of muscle wrappings: 0
+
+Name: tib_ant_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 905.0
+Rest length: 0.339
+Opt fiber length: 0.109
+Tendon slack length: 0.249
+Number of points: 3
+Point 0 FrameMarker            0.296 0.358 0.345  
+Point 1 FrameMarker            0.234 0.123 0.442  
+Point 2 FrameMarker            0.233 0.060 0.425  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: per_brev_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 435.0
+Rest length: 0.235
+Opt fiber length: 0.056
+Tendon slack length: 0.180
+Number of points: 5
+Point 0 FrameMarker            0.300 0.270 0.426  
+Point 1 FrameMarker            0.270 0.126 0.516  
+Point 2 FrameMarker            0.271 0.112 0.516  
+Point 3 FrameMarker            0.274 0.090 0.510  
+Point 4 FrameMarker            0.291 0.078 0.492  
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: per_long_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 943.0
+Rest length: 0.442
+Opt fiber length: 0.055
+Tendon slack length: 0.385
+Number of points: 7
+Point 0 FrameMarker            0.321 0.372 0.364  
+Point 1 FrameMarker            0.270 0.124 0.518  
+Point 2 FrameMarker            0.270 0.111 0.519  
+Point 3 FrameMarker            0.272 0.086 0.514  
+Point 4 FrameMarker            0.284 0.066 0.494  
+Point 5 FrameMarker            0.270 0.057 0.472  
+Point 6 FrameMarker            0.247 0.049 0.427  
+Number of segments: 6
+Number of muscle wrappings: 0
+
+Name: per_tert_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 180.0
+Rest length: 0.199
+Opt fiber length: 0.088
+Tendon slack length: 0.112
+Number of points: 3
+Point 0 FrameMarker            0.289 0.251 0.424  
+Point 1 FrameMarker            0.267 0.115 0.466  
+Point 2 FrameMarker            0.291 0.074 0.472  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: ext_dig_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 512.0
+Rest length: 0.494
+Opt fiber length: 0.114
+Tendon slack length: 0.386
+Number of points: 6
+Point 0 FrameMarker            0.314 0.389 0.350  
+Point 1 FrameMarker            0.259 0.118 0.455  
+Point 2 FrameMarker            0.261 0.090 0.453  
+Point 3 FrameMarker            0.292 0.034 0.393  
+Point 4 FrameMarker            0.300 0.026 0.376  
+Point 5 FrameMarker            0.321 0.009 0.334  
+Number of segments: 5
+Number of muscle wrappings: 0
+
+Name: ext_hal_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 162.0
+Rest length: 0.458
+Opt fiber length: 0.124
+Tendon slack length: 0.341
+Number of points: 7
+Point 0 FrameMarker            0.303 0.353 0.371  
+Point 1 FrameMarker            0.243 0.119 0.446  
+Point 2 FrameMarker            0.240 0.088 0.442  
+Point 3 FrameMarker            0.243 0.071 0.409  
+Point 4 FrameMarker            0.251 0.040 0.367  
+Point 5 FrameMarker            0.264 0.017 0.334  
+Point 6 FrameMarker            0.277 0.009 0.308  
+Number of segments: 6
+Number of muscle wrappings: 0
+
+Name: glut_med1_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 819.0
+Rest length: 0.126
+Opt fiber length: 0.056
+Tendon slack length: 0.081
+Number of points: 2
+Point 0 FrameMarker            0.122 1.029 0.155  
+Point 1 FrameMarker            0.116 0.911 0.218  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_med2_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 573.0
+Rest length: 0.136
+Opt fiber length: 0.088
+Tendon slack length: 0.055
+Number of points: 2
+Point 0 FrameMarker            0.172 1.052 0.193  
+Point 1 FrameMarker            0.119 0.915 0.224  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_med3_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 653.0
+Rest length: 0.114
+Opt fiber length: 0.067
+Tendon slack length: 0.055
+Number of points: 2
+Point 0 FrameMarker            0.191 1.024 0.233  
+Point 1 FrameMarker            0.121 0.914 0.229  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_min1_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 270.0
+Rest length: 0.086
+Opt fiber length: 0.071
+Tendon slack length: 0.017
+Number of points: 2
+Point 0 FrameMarker            0.141 0.992 0.165  
+Point 1 FrameMarker            0.112 0.919 0.205  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_min2_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 285.0
+Rest length: 0.087
+Opt fiber length: 0.059
+Tendon slack length: 0.027
+Number of points: 2
+Point 0 FrameMarker            0.149 0.996 0.180  
+Point 1 FrameMarker            0.113 0.918 0.207  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: glut_min3_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 323.0
+Rest length: 0.091
+Opt fiber length: 0.040
+Tendon slack length: 0.054
+Number of points: 2
+Point 0 FrameMarker            0.166 1.000 0.199  
+Point 1 FrameMarker            0.115 0.918 0.212  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: semimem_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1288.0
+Rest length: 0.450
+Opt fiber length: 0.087
+Tendon slack length: 0.390
+Number of points: 3
+Point 0 FrameMarker            0.191 0.913 0.246  
+Point 1 JointConditionalMarker 0.207 0.506 0.033  [-0.558505,0.174533]
+Point 2 FrameMarker            0.207 0.495 0.020  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: semiten_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 410.0
+Rest length: 0.508
+Opt fiber length: 0.220
+Tendon slack length: 0.280
+Number of points: 5
+Point 0 FrameMarker            0.204 0.902 0.254  
+Point 1 JointConditionalMarker 0.213 0.511 0.043  [-0.331613,0.174533]
+Point 2 FrameMarker            0.212 0.487 0.025  
+Point 3 FrameMarker            0.211 0.470 -0.006 
+Point 4 FrameMarker            0.204 0.451 -0.028 
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: bifemlh_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 896.0
+Rest length: 0.457
+Opt fiber length: 0.119
+Tendon slack length: 0.355
+Number of points: 3
+Point 0 FrameMarker            0.194 0.909 0.254  
+Point 1 FrameMarker            0.152 0.502 0.036  
+Point 2 FrameMarker            0.146 0.481 0.022  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: bifemsh_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 804.0
+Rest length: 0.269
+Opt fiber length: 0.189
+Tendon slack length: 0.097
+Number of points: 3
+Point 0 FrameMarker            0.148 0.734 0.093  
+Point 1 FrameMarker            0.152 0.502 0.036  
+Point 2 FrameMarker            0.146 0.481 0.022  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: sar_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 156.0
+Rest length: 0.615
+Opt fiber length: 0.562
+Tendon slack length: 0.108
+Number of points: 5
+Point 0 FrameMarker            0.118 0.993 0.134  
+Point 1 FrameMarker            0.221 0.596 0.022  
+Point 2 FrameMarker            0.226 0.510 -0.004 
+Point 3 FrameMarker            0.223 0.495 -0.022 
+Point 4 FrameMarker            0.206 0.471 -0.048 
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: add_long_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 627.0
+Rest length: 0.231
+Opt fiber length: 0.148
+Tendon slack length: 0.118
+Number of points: 2
+Point 0 FrameMarker            0.235 0.917 0.149  
+Point 1 FrameMarker            0.148 0.734 0.093  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_brev_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 429.0
+Rest length: 0.144
+Opt fiber length: 0.141
+Tendon slack length: 0.021
+Number of points: 2
+Point 0 FrameMarker            0.239 0.913 0.177  
+Point 1 FrameMarker            0.141 0.820 0.141  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_mag1_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 381.0
+Rest length: 0.123
+Opt fiber length: 0.093
+Tendon slack length: 0.064
+Number of points: 2
+Point 0 FrameMarker            0.233 0.888 0.197  
+Point 1 FrameMarker            0.137 0.815 0.146  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_mag2_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 343.0
+Rest length: 0.207
+Opt fiber length: 0.131
+Tendon slack length: 0.130
+Number of points: 2
+Point 0 FrameMarker            0.229 0.888 0.207  
+Point 1 FrameMarker            0.149 0.718 0.085  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: add_mag3_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 488.0
+Rest length: 0.366
+Opt fiber length: 0.141
+Tendon slack length: 0.269
+Number of points: 2
+Point 0 FrameMarker            0.214 0.896 0.237  
+Point 1 FrameMarker            0.204 0.573 0.002  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: tfl_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 233.0
+Rest length: 0.575
+Opt fiber length: 0.102
+Tendon slack length: 0.456
+Number of points: 4
+Point 0 FrameMarker            0.118 1.018 0.147  
+Point 1 FrameMarker            0.104 0.850 0.128  
+Point 2 FrameMarker            0.138 0.547 0.003  
+Point 3 FrameMarker            0.145 0.499 -0.008 
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: pect_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 266.0
+Rest length: 0.110
+Opt fiber length: 0.106
+Tendon slack length: 0.035
+Number of points: 2
+Point 0 FrameMarker            0.207 0.924 0.163  
+Point 1 FrameMarker            0.147 0.850 0.171  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: grac_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 162.0
+Rest length: 0.482
+Opt fiber length: 0.386
+Tendon slack length: 0.138
+Number of points: 4
+Point 0 FrameMarker            0.231 0.887 0.198  
+Point 1 JointConditionalMarker 0.227 0.514 0.022  [-0.436332,0.174533]
+Point 2 FrameMarker            0.224 0.495 0.008  
+Point 3 FrameMarker            0.207 0.466 -0.028 
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: glut_max1_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 573.0
+Rest length: 0.209
+Opt fiber length: 0.148
+Tendon slack length: 0.131
+Number of points: 4
+Point 0 FrameMarker            0.181 1.075 0.224  
+Point 1 FrameMarker            0.168 1.014 0.245  
+Point 2 FrameMarker            0.137 0.889 0.232  
+Point 3 FrameMarker            0.126 0.866 0.201  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: glut_max2_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 819.0
+Rest length: 0.220
+Opt fiber length: 0.154
+Tendon slack length: 0.133
+Number of points: 4
+Point 0 FrameMarker            0.200 1.033 0.244  
+Point 1 FrameMarker            0.169 0.961 0.261  
+Point 2 FrameMarker            0.148 0.864 0.214  
+Point 3 FrameMarker            0.130 0.828 0.167  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: glut_max3_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 552.0
+Rest length: 0.247
+Opt fiber length: 0.151
+Tendon slack length: 0.152
+Number of points: 4
+Point 0 FrameMarker            0.258 0.989 0.265  
+Point 1 FrameMarker            0.227 0.912 0.277  
+Point 2 FrameMarker            0.163 0.822 0.176  
+Point 3 FrameMarker            0.130 0.794 0.139  
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: iliacus_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1073.0
+Rest length: 0.216
+Opt fiber length: 0.104
+Tendon slack length: 0.104
+Number of points: 5
+Point 0 FrameMarker            0.161 1.041 0.177  
+Point 1 FrameMarker            0.167 0.942 0.147  
+Point 2 JointConditionalMarker 0.168 0.917 0.154  [-1.5708,0.785398]
+Point 3 FrameMarker            0.165 0.885 0.168  
+Point 4 FrameMarker            0.161 0.867 0.185  
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: psoas_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1113.0
+Rest length: 0.271
+Opt fiber length: 0.104
+Tendon slack length: 0.166
+Number of points: 5
+Point 0 FrameMarker            0.215 1.097 0.159  
+Point 1 FrameMarker            0.172 0.940 0.145  
+Point 2 JointConditionalMarker 0.168 0.917 0.154  [-1.5708,0.785398]
+Point 3 FrameMarker            0.167 0.889 0.169  
+Point 4 FrameMarker            0.164 0.870 0.186  
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: quad_fem_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 381.0
+Rest length: 0.073
+Opt fiber length: 0.056
+Tendon slack length: 0.025
+Number of points: 2
+Point 0 FrameMarker            0.211 0.895 0.241  
+Point 1 FrameMarker            0.139 0.882 0.219  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: gem_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 164.0
+Rest length: 0.068
+Opt fiber length: 0.025
+Tendon slack length: 0.041
+Number of points: 2
+Point 0 FrameMarker            0.189 0.928 0.238  
+Point 1 FrameMarker            0.126 0.923 0.213  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: peri_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 444.0
+Rest length: 0.142
+Opt fiber length: 0.027
+Tendon slack length: 0.119
+Number of points: 3
+Point 0 FrameMarker            0.235 1.018 0.247  
+Point 1 FrameMarker            0.192 0.985 0.236  
+Point 2 FrameMarker            0.127 0.923 0.213  
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: rect_fem_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1169.0
+Rest length: 0.437
+Opt fiber length: 0.122
+Tendon slack length: 0.330
+Number of points: 3
+Point 0 FrameMarker            0.149 0.966 0.149  
+Point 1 JointConditionalMarker 0.169 0.564 -0.028 [-2.61799,-1.45997]
+Point 2 JointBasedMovingMarker 0.164 0.596 -0.051 
+Cubic hermite spline knots X Y
+x location
+-2.094 0.016
+-2.000 0.018
+-1.571 0.028
+-1.458 0.030
+-1.396 0.031
+-1.047 0.037
+-0.698 0.042
+-0.526 0.045
+-0.349 0.048
+-0.175 0.053
+0.000 0.062
+0.000 0.062
+0.000 0.062
+0.028 0.063
+0.087 0.067
+0.175 0.073
+2.094 0.057
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.023
+-2.000 0.024
+-1.571 0.025
+-1.458 0.025
+-1.396 0.025
+-1.047 0.025
+-0.698 0.024
+-0.526 0.024
+-0.349 0.023
+-0.175 0.023
+0.000 0.021
+0.000 0.021
+0.000 0.021
+0.028 0.021
+0.087 0.019
+0.175 0.016
+2.094 -0.067
+
+Cubic hermite spline knots X Y
+z location
+-2.094 -0.001
+-0.960 -0.001
+0.175 -0.001
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: vas_med_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1294.0
+Rest length: 0.184
+Opt fiber length: 0.095
+Tendon slack length: 0.135
+Number of points: 5
+Point 0 FrameMarker            0.151 0.740 0.085  
+Point 1 FrameMarker            0.168 0.687 0.030  
+Point 2 JointConditionalMarker 0.184 0.566 -0.034 [-2.61799,-1.21004]
+Point 3 JointConditionalMarker 0.186 0.541 -0.035 [-2.61799,-1.78006]
+Point 4 JointBasedMovingMarker 0.183 0.597 -0.047 
+Cubic hermite spline knots X Y
+x location
+-2.094 0.010
+-2.000 0.012
+-1.571 0.022
+-1.458 0.024
+-1.396 0.025
+-1.047 0.031
+-0.698 0.036
+-0.526 0.039
+-0.349 0.043
+-0.175 0.048
+0.000 0.056
+0.000 0.056
+0.000 0.056
+0.028 0.058
+0.087 0.061
+0.175 0.068
+2.094 0.063
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.022
+-2.000 0.023
+-1.571 0.024
+-1.458 0.024
+-1.396 0.024
+-1.047 0.024
+-0.698 0.023
+-0.526 0.023
+-0.349 0.023
+-0.175 0.023
+0.000 0.022
+0.000 0.022
+0.000 0.022
+0.028 0.022
+0.087 0.021
+0.175 0.018
+2.094 -0.066
+
+Cubic hermite spline knots X Y
+z location
+-2.094 0.015
+0.000 0.015
+2.094 0.015
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: vas_int_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1365.0
+Rest length: 0.200
+Opt fiber length: 0.093
+Tendon slack length: 0.145
+Number of points: 4
+Point 0 FrameMarker            0.136 0.763 0.080  
+Point 1 FrameMarker            0.138 0.749 0.068  
+Point 2 JointConditionalMarker 0.165 0.565 -0.028 [-2.61799,-1.42]
+Point 3 JointBasedMovingMarker 0.164 0.596 -0.051 
+Cubic hermite spline knots X Y
+x location
+-2.094 0.016
+-2.000 0.018
+-1.571 0.028
+-1.458 0.030
+-1.396 0.031
+-1.047 0.037
+-0.698 0.042
+-0.526 0.045
+-0.349 0.048
+-0.175 0.053
+0.000 0.062
+0.000 0.062
+0.000 0.062
+0.028 0.063
+0.087 0.067
+0.175 0.073
+2.094 0.057
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.023
+-2.000 0.024
+-1.571 0.025
+-1.458 0.025
+-1.396 0.025
+-1.047 0.025
+-0.698 0.024
+-0.526 0.024
+-0.349 0.023
+-0.175 0.023
+0.000 0.021
+0.000 0.021
+0.000 0.021
+0.028 0.021
+0.087 0.019
+0.175 0.016
+2.094 -0.067
+
+Cubic hermite spline knots X Y
+z location
+-2.094 -0.001
+-0.960 -0.001
+0.175 -0.001
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: vas_lat_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1871.0
+Rest length: 0.214
+Opt fiber length: 0.090
+Tendon slack length: 0.168
+Number of points: 5
+Point 0 FrameMarker            0.136 0.758 0.107  
+Point 1 FrameMarker            0.127 0.696 0.052  
+Point 2 JointConditionalMarker 0.149 0.564 -0.028 [-2.61799,-1.21004]
+Point 3 JointConditionalMarker 0.154 0.539 -0.028 [-2.61799,-1.92004]
+Point 4 JointBasedMovingMarker 0.147 0.593 -0.047 
+Cubic hermite spline knots X Y
+x location
+-2.094 0.014
+-2.000 0.017
+-1.571 0.026
+-1.458 0.028
+-1.396 0.029
+-1.047 0.035
+-0.698 0.041
+-0.526 0.044
+-0.349 0.047
+-0.175 0.052
+0.000 0.060
+0.000 0.060
+0.000 0.060
+0.028 0.061
+0.087 0.065
+0.175 0.071
+2.094 0.058
+
+Cubic hermite spline knots X Y
+y location
+-2.094 0.022
+-2.000 0.022
+-1.571 0.023
+-1.458 0.023
+-1.396 0.023
+-1.047 0.023
+-0.698 0.022
+-0.526 0.022
+-0.349 0.022
+-0.175 0.021
+0.000 0.020
+0.000 0.020
+0.000 0.020
+0.028 0.019
+0.087 0.018
+0.175 0.015
+2.094 -0.065
+
+Cubic hermite spline knots X Y
+z location
+-2.094 -0.017
+0.000 -0.017
+2.094 -0.017
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: med_gas_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1558.0
+Rest length: 0.519
+Opt fiber length: 0.069
+Tendon slack length: 0.450
+Number of points: 3
+Point 0 FrameMarker            0.205 0.552 0.023  
+Point 1 JointConditionalMarker 0.210 0.538 0.029  [-0.785398,0.174533]
+Point 2 FrameMarker            0.205 0.052 -0.080 
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: lat_gas_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 683.0
+Rest length: 0.516
+Opt fiber length: 0.074
+Tendon slack length: 0.438
+Number of points: 3
+Point 0 FrameMarker            0.152 0.545 0.033  
+Point 1 JointConditionalMarker 0.153 0.534 0.037  [-0.785398,0.174533]
+Point 2 FrameMarker            0.205 0.052 -0.080 
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: soleus_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 3549.0
+Rest length: 0.337
+Opt fiber length: 0.058
+Tendon slack length: 0.289
+Number of points: 2
+Point 0 FrameMarker            0.178 0.383 -0.036 
+Point 1 FrameMarker            0.205 0.052 -0.080 
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: tib_post_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 1588.0
+Rest length: 0.397
+Opt fiber length: 0.036
+Tendon slack length: 0.356
+Number of points: 4
+Point 0 FrameMarker            0.184 0.402 -0.024 
+Point 1 FrameMarker            0.227 0.105 -0.110 
+Point 2 FrameMarker            0.224 0.068 -0.127 
+Point 3 FrameMarker            0.218 0.059 -0.169 
+Number of segments: 3
+Number of muscle wrappings: 0
+
+Name: flex_dig_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 310.0
+Rest length: 0.492
+Opt fiber length: 0.039
+Tendon slack length: 0.454
+Number of points: 8
+Point 0 FrameMarker            0.191 0.326 -0.048 
+Point 1 FrameMarker            0.223 0.104 -0.108 
+Point 2 FrameMarker            0.223 0.067 -0.129 
+Point 3 FrameMarker            0.217 0.059 -0.162 
+Point 4 FrameMarker            0.161 0.053 -0.265 
+Point 5 FrameMarker            0.154 0.054 -0.276 
+Point 6 FrameMarker            0.142 0.062 -0.308 
+Point 7 FrameMarker            0.136 0.068 -0.323 
+Number of segments: 7
+Number of muscle wrappings: 0
+
+Name: flex_hal_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 322.0
+Rest length: 0.477
+Opt fiber length: 0.049
+Tendon slack length: 0.431
+Number of points: 7
+Point 0 FrameMarker            0.163 0.291 -0.054 
+Point 1 FrameMarker            0.221 0.100 -0.106 
+Point 2 FrameMarker            0.220 0.061 -0.123 
+Point 3 FrameMarker            0.211 0.056 -0.200 
+Point 4 FrameMarker            0.202 0.062 -0.277 
+Point 5 FrameMarker            0.197 0.064 -0.301 
+Point 6 FrameMarker            0.181 0.071 -0.344 
+Number of segments: 6
+Number of muscle wrappings: 0
+
+Name: tib_ant_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 905.0
+Rest length: 0.348
+Opt fiber length: 0.112
+Tendon slack length: 0.256
+Number of points: 3
+Point 0 FrameMarker            0.169 0.379 -0.061 
+Point 1 FrameMarker            0.212 0.130 -0.158 
+Point 2 FrameMarker            0.214 0.072 -0.211 
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: per_brev_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 435.0
+Rest length: 0.241
+Opt fiber length: 0.057
+Tendon slack length: 0.184
+Number of points: 5
+Point 0 FrameMarker            0.155 0.257 -0.063 
+Point 1 FrameMarker            0.170 0.083 -0.100 
+Point 2 FrameMarker            0.169 0.073 -0.110 
+Point 3 FrameMarker            0.166 0.058 -0.127 
+Point 4 FrameMarker            0.151 0.057 -0.148 
+Number of segments: 4
+Number of muscle wrappings: 0
+
+Name: per_long_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 943.0
+Rest length: 0.452
+Opt fiber length: 0.056
+Tendon slack length: 0.394
+Number of points: 7
+Point 0 FrameMarker            0.144 0.377 -0.036 
+Point 1 FrameMarker            0.170 0.081 -0.100 
+Point 2 FrameMarker            0.170 0.069 -0.108 
+Point 3 FrameMarker            0.168 0.053 -0.124 
+Point 4 FrameMarker            0.158 0.045 -0.153 
+Point 5 FrameMarker            0.173 0.048 -0.175 
+Point 6 FrameMarker            0.201 0.062 -0.216 
+Number of segments: 6
+Number of muscle wrappings: 0
+
+Name: per_tert_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 180.0
+Rest length: 0.205
+Opt fiber length: 0.091
+Tendon slack length: 0.115
+Number of points: 3
+Point 0 FrameMarker            0.165 0.243 -0.079 
+Point 1 FrameMarker            0.176 0.111 -0.145 
+Point 2 FrameMarker            0.153 0.063 -0.168 
+Number of segments: 2
+Number of muscle wrappings: 0
+
+Name: ext_dig_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 512.0
+Rest length: 0.503
+Opt fiber length: 0.116
+Tendon slack length: 0.393
+Number of points: 6
+Point 0 FrameMarker            0.153 0.400 -0.034 
+Point 1 FrameMarker            0.184 0.120 -0.151 
+Point 2 FrameMarker            0.184 0.085 -0.175 
+Point 3 FrameMarker            0.159 0.067 -0.256 
+Point 4 FrameMarker            0.153 0.068 -0.275 
+Point 5 FrameMarker            0.135 0.074 -0.322 
+Number of segments: 5
+Number of muscle wrappings: 0
+
+Name: ext_hal_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 162.0
+Rest length: 0.466
+Opt fiber length: 0.126
+Tendon slack length: 0.347
+Number of points: 7
+Point 0 FrameMarker            0.160 0.357 -0.045 
+Point 1 FrameMarker            0.201 0.125 -0.157 
+Point 2 FrameMarker            0.206 0.088 -0.183 
+Point 3 FrameMarker            0.206 0.089 -0.220 
+Point 4 FrameMarker            0.202 0.083 -0.273 
+Point 5 FrameMarker            0.191 0.079 -0.313 
+Point 6 FrameMarker            0.180 0.085 -0.340 
+Number of segments: 6
+Number of muscle wrappings: 0
+
+Name: ercspn_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 2500.0
+Rest length: 0.141
+Opt fiber length: 0.113
+Tendon slack length: 0.028
+Number of points: 2
+Point 0 FrameMarker            0.301 1.066 0.232  
+Point 1 FrameMarker            0.270 1.203 0.225  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: ercspn_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 2500.0
+Rest length: 0.141
+Opt fiber length: 0.113
+Tendon slack length: 0.028
+Number of points: 2
+Point 0 FrameMarker            0.212 1.061 0.244  
+Point 1 FrameMarker            0.227 1.204 0.223  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: intobl_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 900.0
+Rest length: 0.189
+Opt fiber length: 0.095
+Tendon slack length: 0.095
+Number of points: 2
+Point 0 FrameMarker            0.360 1.081 0.118  
+Point 1 FrameMarker            0.267 1.228 0.105  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: intobl_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 900.0
+Rest length: 0.189
+Opt fiber length: 0.095
+Tendon slack length: 0.095
+Number of points: 2
+Point 0 FrameMarker            0.125 1.070 0.148  
+Point 1 FrameMarker            0.239 1.228 0.104  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: extobl_r
+Material: Thelen2003AxialMuscle
+Max isometric force: 900.0
+Rest length: 0.265
+Opt fiber length: 0.116
+Tendon slack length: 0.136
+Number of points: 2
+Point 0 FrameMarker            0.260 0.938 0.141  
+Point 1 FrameMarker            0.352 1.183 0.121  
+Number of segments: 1
+Number of muscle wrappings: 0
+
+Name: extobl_l
+Material: Thelen2003AxialMuscle
+Max isometric force: 900.0
+Rest length: 0.265
+Opt fiber length: 0.116
+Tendon slack length: 0.136
+Number of points: 2
+Point 0 FrameMarker            0.240 0.937 0.143  
+Point 1 FrameMarker            0.152 1.184 0.113  
+Number of segments: 1
+Number of muscle wrappings: 0
 
 %%FINITE ELEMENTS%%
 %%------------------------------------------------------------%%
@@ -48766,20 +50374,23 @@ MOTION TARGET TERM INFORMATION
 Weight: 1.0
 Use legacy control: false
 Use PD control: true
-Chase Time: 0.001
+Chase Time: 0.01
 KD: 100.0
-KP: 1000000.0
+KP: 99999.99999999999
+
+DAMPING TERM INFORMATION
+Enabled: true
+Weight: 1.0E-5
 
 L2REGULARIZATION TERM INFORMATION
 Enabled: true
-Weight: 1.0E-4
+Weight: 15.0
 
-FEASIBLE SOLVER INFORMATION
-Enabled: true
+QP SOLVER INFORMATION
+Fallback enabled: true
 Bounds threshold: 1.0
-Fallback Q per unit weight: -1.0
-Fallback L2 weight: -41.0
-Equality tolerance: 1.0E-9
+Fallback cost scale: -1.0
+Bounds tolerance: 1.0E-8
 
 FORCE EXCITATION TARGET TERM INFORMATION
 Enabled: true
@@ -48846,6 +50457,98 @@ calcn_l ground reaction forces  NumericControlProbe   true
 
 EXCITER INFORMATION
 Name                      Type                  Weight  Force scale a_min a_max 
+glut_med1_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_med2_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_med3_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_min1_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_min2_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_min3_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+semimem_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+semiten_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+bifemlh_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+bifemsh_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+sar_r                     MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_long_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_brev_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_mag1_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_mag2_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_mag3_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+tfl_r                     MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+pect_r                    MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+grac_r                    MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_max1_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_max2_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_max3_r               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+iliacus_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+psoas_r                   MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+quad_fem_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+gem_r                     MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+peri_r                    MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+rect_fem_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+vas_med_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+vas_int_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+vas_lat_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+med_gas_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+lat_gas_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+soleus_r                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+tib_post_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+flex_dig_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+flex_hal_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+tib_ant_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+per_brev_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+per_long_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+per_tert_r                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+ext_dig_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+ext_hal_r                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_med1_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_med2_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_med3_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_min1_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_min2_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_min3_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+semimem_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+semiten_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+bifemlh_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+bifemsh_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+sar_l                     MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_long_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_brev_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_mag1_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_mag2_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+add_mag3_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+tfl_l                     MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+pect_l                    MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+grac_l                    MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_max1_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_max2_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+glut_max3_l               MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+iliacus_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+psoas_l                   MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+quad_fem_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+gem_l                     MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+peri_l                    MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+rect_fem_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+vas_med_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+vas_int_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+vas_lat_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+med_gas_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+lat_gas_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+soleus_l                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+tib_post_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+flex_dig_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+flex_hal_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+tib_ant_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+per_brev_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+per_long_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+per_tert_l                MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+ext_dig_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+ext_hal_l                 MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+ercspn_r                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+ercspn_l                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+intobl_r                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+intobl_l                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+extobl_r                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
+extobl_l                  MultiPointMuscleOsim  1.0     0.0         0.0   1.0   
 arm_flex_r_reserve        JointActuator         1.0     100.0       -1.0  1.0   
 arm_add_r_reserve         JointActuator         1.0     100.0       -1.0  1.0   
 arm_rot_r_reserve         JointActuator         1.0     100.0       -1.0  1.0   
@@ -48864,29 +50567,29 @@ scapula_weld_r_reserve    JointActuator         1.0     100.0       -1.0  1.0
 clavicle_weld_r_reserve   JointActuator         1.0     100.0       -1.0  1.0   
 scapula_weld_l_reserve    JointActuator         1.0     100.0       -1.0  1.0   
 clavicle_weld_l_reserve   JointActuator         1.0     100.0       -1.0  1.0   
-pelvis_tilt_reserve       JointActuator         1.0     1000.0      -1.0  1.0   
-pelvis_list_reserve       JointActuator         1.0     1000.0      -1.0  1.0   
-pelvis_rotation_reserve   JointActuator         1.0     1000.0      -1.0  1.0   
-pelvis_tx_reserve         JointActuator         1.0     1000.0      -1.0  1.0   
-pelvis_ty_reserve         JointActuator         1.0     1000.0      -1.0  1.0   
-pelvis_tz_reserve         JointActuator         1.0     1000.0      -1.0  1.0   
-hip_flexion_r_reserve     JointActuator         1.0     1000.0      -1.0  1.0   
-hip_adduction_r_reserve   JointActuator         1.0     1000.0      -1.0  1.0   
-hip_rotation_r_reserve    JointActuator         1.0     1000.0      -1.0  1.0   
-knee_angle_r_reserve      JointActuator         1.0     1000.0      -1.0  1.0   
-ankle_angle_r_reserve     JointActuator         1.0     1000.0      -1.0  1.0   
-subtalar_angle_r_reserve  JointActuator         1.0     1000.0      -1.0  1.0   
-mtp_angle_r_reserve       JointActuator         1.0     1000.0      -1.0  1.0   
-hip_flexion_l_reserve     JointActuator         1.0     1000.0      -1.0  1.0   
-hip_adduction_l_reserve   JointActuator         1.0     1000.0      -1.0  1.0   
-hip_rotation_l_reserve    JointActuator         1.0     1000.0      -1.0  1.0   
-knee_angle_l_reserve      JointActuator         1.0     1000.0      -1.0  1.0   
-ankle_angle_l_reserve     JointActuator         1.0     1000.0      -1.0  1.0   
-subtalar_angle_l_reserve  JointActuator         1.0     1000.0      -1.0  1.0   
-mtp_angle_l_reserve       JointActuator         1.0     1000.0      -1.0  1.0   
-lumbar_extension_reserve  JointActuator         1.0     1000.0      -1.0  1.0   
-lumbar_bending_reserve    JointActuator         1.0     1000.0      -1.0  1.0   
-lumbar_rotation_reserve   JointActuator         1.0     1000.0      -1.0  1.0   
+pelvis_tilt_reserve       JointActuator         1000.0  1000.0      -1.0  1.0   
+pelvis_list_reserve       JointActuator         1000.0  1000.0      -1.0  1.0   
+pelvis_rotation_reserve   JointActuator         1000.0  1000.0      -1.0  1.0   
+pelvis_tx_reserve         JointActuator         1000.0  1000.0      -1.0  1.0   
+pelvis_ty_reserve         JointActuator         1000.0  1000.0      -1.0  1.0   
+pelvis_tz_reserve         JointActuator         1000.0  1000.0      -1.0  1.0   
+hip_flexion_r_reserve     JointActuator         1000.0  1000.0      -1.0  1.0   
+hip_adduction_r_reserve   JointActuator         1000.0  1000.0      -1.0  1.0   
+hip_rotation_r_reserve    JointActuator         1000.0  1000.0      -1.0  1.0   
+knee_angle_r_reserve      JointActuator         1000.0  1000.0      -1.0  1.0   
+ankle_angle_r_reserve     JointActuator         1000.0  1000.0      -1.0  1.0   
+subtalar_angle_r_reserve  JointActuator         1000.0  1000.0      -1.0  1.0   
+mtp_angle_r_reserve       JointActuator         1000.0  1000.0      -1.0  1.0   
+hip_flexion_l_reserve     JointActuator         1000.0  1000.0      -1.0  1.0   
+hip_adduction_l_reserve   JointActuator         1000.0  1000.0      -1.0  1.0   
+hip_rotation_l_reserve    JointActuator         1000.0  1000.0      -1.0  1.0   
+knee_angle_l_reserve      JointActuator         1000.0  1000.0      -1.0  1.0   
+ankle_angle_l_reserve     JointActuator         1000.0  1000.0      -1.0  1.0   
+subtalar_angle_l_reserve  JointActuator         1000.0  1000.0      -1.0  1.0   
+mtp_angle_l_reserve       JointActuator         1000.0  1000.0      -1.0  1.0   
+lumbar_extension_reserve  JointActuator         1000.0  1000.0      -1.0  1.0   
+lumbar_bending_reserve    JointActuator         1000.0  1000.0      -1.0  1.0   
+lumbar_rotation_reserve   JointActuator         1000.0  1000.0      -1.0  1.0   
 
 %%CONTACT%%
 %%------------------------------------------------------------%%

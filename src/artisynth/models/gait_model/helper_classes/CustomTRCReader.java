@@ -9,16 +9,15 @@ import maspack.matrix.Vector3d;
 import maspack.util.ReaderTokenizer;
 
 /**
- * TRC Reader with custom line handling.
+ * The gait model class...
  * <p>
- * 
- * @author Alexander Graf Copyright (c) 2026
+ * @author Alexander Denk Copyright (c) 2025
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.graf-lmr@uni-due.de
+ * alexander.denk@uni-due.de
  */
 public class CustomTRCReader extends TRCReader {
    // ----------------------------Instance Fields------------------------------
@@ -41,7 +40,6 @@ public class CustomTRCReader extends TRCReader {
       return myUnits;
    }
 
-   
    @Override
    public void readData () throws IOException {
       BufferedReader reader =
@@ -51,6 +49,11 @@ public class CustomTRCReader extends TRCReader {
       rtok.eolIsSignificant (true);
       List<Object> flags = scanDataHead (reader);
       scanPositionData (reader, flags);
+      System.out.println (
+         "CustomTRCReader: experimental markers: "
+            + this.getMarkerLabels ().size ());
+      System.out.println (
+         "CustomTRCReader: read " + this.numFrames () + " frames");
    }
 
    protected List<Object> scanDataHead (BufferedReader reader)
@@ -98,7 +101,7 @@ public class CustomTRCReader extends TRCReader {
          else {
             System.out
                .println (
-                  "Warning: TRCReader: unrecognized data label '" + label
+                  "CustomTRCReader, warning: unrecognized data label '" + label
                   + "', ignoring");
          }
       }
@@ -126,7 +129,7 @@ public class CustomTRCReader extends TRCReader {
       if (mkrLabels.size () != numMarkers) {
          System.out
             .println (
-               "Warning: TRCReader: num marker labels (" + mkrLabels.size ()
+               "CustomTRCReader, warning: num marker labels (" + mkrLabels.size ()
                + ") != specified number of markers (" + numMarkers
                + "), assuming " + mkrLabels.size ());
       }
@@ -182,7 +185,7 @@ public class CustomTRCReader extends TRCReader {
       if (myMotionData.numFrames () != numFrames) {
          System.out
             .println (
-               "Warning: TRCReader: reader " + myMotionData.numFrames ()
+               "CustomTRCReader, warning: read " + myMotionData.numFrames ()
                + " frames; expected " + numFrames);
       }
    }

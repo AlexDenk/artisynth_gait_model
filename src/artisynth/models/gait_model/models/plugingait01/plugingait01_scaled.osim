@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <OpenSimDocument Version="40500">
-	<Model name="plugingait01_scaled">
+	<Model name="EP010DR1980_BE_3Gang01_scaled">
 		<!--The model's ground reference frame.-->
 		<Ground name="ground">
 			<!--The geometry used to display the axes of this Frame.-->

@@ -5,15 +5,15 @@ import java.util.ArrayList;
 /**
  * Data structure that contains the names of experimental markers and virtual
  * markers alongside their corresponding weights.
- * <p>
  * 
- * @author Alexander Graf Copyright (c) 2026
+ * <p>
+ * @author Alexander Denk Copyright (c) 2025
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.graf-lmr@uni-due.de
+ * alexander.denk@uni-due.de
  */
 public class MarkerMapping {
    // ----------------------------Instance Fields------------------------------

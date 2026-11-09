@@ -1,9 +1,14 @@
 %%------------------------ INPUT FILE ------------------------%%
-%% Author: Alexander Graf, Copyright (c) 2025                 %%
+%% Author: Alexander Graf, Copyright (c) 2026                 %%
 %% (UDE) University of Duisburg-Essen                         %%
 %% Chair of Mechanics and Robotics                            %%
-%% alexander.graf-lmr@uni-due.de                              %%
+%% alexander.graf-lmr@uni-due.de                                  %%
 %%------------------------------------------------------------%%
+
+PROVENANCE INFORMATION
+Core version: artisynth_core_3.9
+Core revision: qpsolver-equality-retry 7ec50dd9
+Model revision: main 51a6b58b
 
 %%GENERAL SIMULATION PARAMETERS%%
 %%------------------------------------------------------------%%
@@ -15,6 +20,7 @@ Max Iterations: 20
 Max Tolerance: 0.01
 Matrix Solver: Pardiso
 Hybrid Solving enabled: false
+Fictitious Jacobian forces: true
 
 PHYSICS
 Frame Damping: 0.0
@@ -50380,12 +50386,11 @@ L2REGULARIZATION TERM INFORMATION
 Enabled: true
 Weight: 15.0
 
-FEASIBLE SOLVER INFORMATION
-Enabled: true
+QP SOLVER INFORMATION
+Fallback enabled: true
 Bounds threshold: 1.0
-Fallback Q per unit weight: -1.0
-Fallback L2 weight: -23110.0
-Equality tolerance: 1.0E-9
+Fallback cost scale: -1.0
+Bounds tolerance: 1.0E-8
 
 FORCE EXCITATION TARGET TERM INFORMATION
 Enabled: true

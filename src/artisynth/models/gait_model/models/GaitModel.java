@@ -33,6 +33,7 @@ import artisynth.core.inverse.InverseManager;
 import artisynth.core.inverse.InverseManager.ProbeID;
 import artisynth.core.inverse.L2RegularizationTerm;
 import artisynth.core.inverse.MotionTargetTerm;
+import artisynth.core.inverse.QPSolver;
 import artisynth.core.inverse.TargetPoint;
 import artisynth.core.inverse.TrackingController;
 import artisynth.core.materials.AxialMaterial;
@@ -88,7 +89,6 @@ import artisynth.core.probes.VelocityInputProbe;
 import artisynth.core.renderables.ColorBar;
 import artisynth.core.util.ArtisynthPath;
 import artisynth.core.workspace.RootModel;
-
 import artisynth.models.gait_model.helper_classes.CoordinateData;
 import artisynth.models.gait_model.helper_classes.CustomTRCReader;
 import artisynth.models.gait_model.helper_classes.ForceData;
@@ -96,8 +96,6 @@ import artisynth.models.gait_model.helper_classes.ForceExcitationTargetTerm;
 import artisynth.models.gait_model.helper_classes.MOTReader;
 import artisynth.models.gait_model.helper_classes.MarkerMapping;
 import artisynth.models.gait_model.helper_classes.MotionTargetController;
-import artisynth.models.gait_model.helper_classes.FeasibleQPSolver;
-
 import maspack.function.Diff1Function1x1;
 import maspack.function.ScaledDiff1Function1x1;
 import maspack.geometry.Face;
@@ -124,18 +122,25 @@ import maspack.util.ListView;
 import maspack.util.PathFinder;
 
 /**
- * This class contains the lower-limb gait model based on the model by Tim Dorn
- * et al. The .osim file is imported and experimental boundary conditions
- * applied automatically.
+ * Base gait model for running muscle-driven simulations with motion and
+ * force-plate data. The model provides public flags to turn on/off:
  * <p>
- * To run the inverse kinematics of the model, set myUseIKSolely to true or call
- * setUseIKSolely(true) externally to this class. To remove the muscles from the
- * model, set myUseCASolely to true or call setUseCASolely(true) externally to
- * this class.
+ * - debug mode, providing additional output probes
  * <p>
- * Also the model provides API to adjust components externally, e.g. via an
- * external MATLAB process. This includes setting marker and exciter weights,
- * grouping muscles and saving all probes.
+ * - Inverse Kinematics
+ * <p>
+ * - Muscles
+ * <p>
+ * - Ground Reaction Forces
+ * <p>
+ * - Muscle grouping
+ * <p>
+ * - Excitation targets
+ * <p>
+ * Paper:<p> 
+ * - Graf, A.; Kowalczyk, W. Development and Cross-Platform
+ * Benchmarking of an ArtiSynth Lower-Limb Gait Model Against OpenSim. Preprints
+ * 2026, 2026061626. https://doi.org/10.20944/preprints202606.1626.v2
  * 
  * @author Alexander Graf Copyright (c) 2026
  * <p>
@@ -184,7 +189,7 @@ public class GaitModel extends RootModel {
    static final double DEFAULT_SCALE = 1.0;
    double myScale = DEFAULT_SCALE;
    // Used to flag whether model runs in debug mode
-   static final boolean DEFAULT_DEBUG = true;
+   static final boolean DEFAULT_DEBUG = false;
    boolean myDebug = DEFAULT_DEBUG;
    // Used to flag whether inverse kinematics is used during forward dynamics
    static final boolean DEFAULT_FILTER_FD_WITH_IK = true;
@@ -317,7 +322,7 @@ public class GaitModel extends RootModel {
             .append (
                "%% Chair of Mechanics and Robotics                            %%\n")
             .append (
-               "%% alexander.graf-lmr@uni-due.de                              %%\n")
+               "%% alexander.graf-lmr@uni-due.de                                  %%\n")
             .append (
                "%%------------------------------------------------------------%%\n");
          writer.print (header);
@@ -933,15 +938,16 @@ public class GaitModel extends RootModel {
             .append (
                "%%------------------------ INPUT FILE ------------------------%%\n")
             .append (
-               "%% Author: Alexander Graf, Copyright (c) 2025                 %%\n")
+               "%% Author: Alexander Graf, Copyright (c) 2026                 %%\n")
             .append (
                "%% (UDE) University of Duisburg-Essen                         %%\n")
             .append (
                "%% Chair of Mechanics and Robotics                            %%\n")
             .append (
-               "%% alexander.graf-lmr@uni-due.de                              %%\n")
+               "%% alexander.graf-lmr@uni-due.de                                  %%\n")
             .append (
                "%%------------------------------------------------------------%%\n");
+         writeProvenanceInfo (output);
          MechSystemSolver solver = myMech.getSolver ();
          writeSolverInfo (output, solver);
          writePhysicsInfo (output, myMech);
@@ -969,8 +975,8 @@ public class GaitModel extends RootModel {
    // --------------------------Private Instance Methods------------------------
    /**
     * Adds output probes and panel widgets for the excitations of all exciters
-    * of the MotionTargetController and also max force/moment if the model is
-    * driven by frame exciters or coordinate actuators.
+    * of the MotionTargetController, and for the maximum force of the joint
+    * actuators.
     * 
     * @param controller
     * {@link MotionTargetController}
@@ -1085,8 +1091,8 @@ public class GaitModel extends RootModel {
    }
 
    /**
-    * Adds all model muscles and three frame exciters each for pelvis and both
-    * calcanei to the controller.
+    * Adds all model muscles (single or grouped) and one joint actuator per
+    * joint coordinate (reserve, excitation -1 to 1) to the controller.
     * 
     * @param controller
     * {@link MotionTargetController}
@@ -1432,10 +1438,27 @@ public class GaitModel extends RootModel {
          // targetProbe gets overwritten
          myErrProbe = createIKPositionError (targetProbe, posProbe);
          addOutputProbe (myErrProbe);
+         // Smoothed here, before the positions are copied to the targets and
+         // before they are differentiated, so the velocity targets come from
+         // smoothed positions rather than being smoothed after
+         // differentiation. The IK error probe above is left measuring the
+         // unsmoothed projection, which is what the achievability floor means.
+         if (targetSmoothingMode ().equals ("positions")) {
+            posProbe
+               .smoothWithSavitzkyGolay (targetSmoothingWindow (posProbe), 4);
+         }
          // Overwrite default marker positions with achievable ones
          targetProbe.setData (posProbe, true);
-         // Generate VelocityInputProbes from PositionInputProbes
-         VelocityInputProbe velProbe = createVelProbe (posProbe);
+         // The velocity targets have to bind to the controller's target
+         // points, whose "velocity" property MotionTargetTerm reads through
+         // getVelState. Derived from posProbe they bind to the model's own
+         // markers instead, where nothing reads them, so the feedforward term
+         // is zero and the motion term is a PD controller without one. "step"
+         // keeps that binding, which is what every batch so far was computed
+         // with; see targetSmoothingMode.
+         NumericInputProbe velSource =
+            targetSmoothingMode ().equals ("step") ? posProbe : targetProbe;
+         VelocityInputProbe velProbe = createVelProbe (velSource);
          addInputProbe (velProbe);
       }
    }
@@ -1708,18 +1731,99 @@ public class GaitModel extends RootModel {
     * @param posProbe
     * @return
     */
-   private VelocityInputProbe createVelProbe (PositionInputProbe posProbe) {
+   private VelocityInputProbe createVelProbe (NumericInputProbe posProbe) {
+      String velMode = targetSmoothingMode ();
+      // A TargetPoint publishes "velocity" and not "targetVelocity", so the
+      // probe has to bind to the plain property to reach getVelState.
+      boolean useTargetProps = velMode.equals ("step");
       VelocityInputProbe velProbe =
          VelocityInputProbe
-            .createInterpolated ("target velocities", posProbe, true, -1);
+            .createInterpolated (
+               "target velocities", posProbe, useTargetProps, -1);
       // smooth velocities, since they were kind of wobbly. Done by John,
       // generalised by me
-      int wsize = (int)(0.21 / getMaxStepSize ());
-      velProbe.smoothWithSavitzkyGolay (wsize, 4);
-      velProbe.setActive (true);
-      System.out.println (
-            "GaitModel: generated velocity input probes based on marker trajectories");
+      String mode = velMode;
+      int wsize;
+      if (mode.equals ("positions")) {
+         // The positions were smoothed before they were differentiated, so
+         // smoothing again here would filter the target twice.
+         wsize = 0;
+      }
+      else if (mode.equals ("knots")) {
+         wsize = targetSmoothingWindow (velProbe);
+      }
+      else {
+         wsize = (int)(0.21 / getMaxStepSize ());
+      }
+      if (wsize > 0) {
+         velProbe.smoothWithSavitzkyGolay (wsize, 4);
+      }
+      // "none" leaves the probe in place but stops it writing, which is how a
+      // run answers whether the velocity targets reach the motion term at all.
+      velProbe.setActive (!mode.equals ("none"));
+      System.out
+         .println (
+            "GaitModel: generated velocity input probes based on marker "
+            + "trajectories (smoothing mode " + mode + ", velocity window "
+            + wsize + " knots)");
+      // What the probe actually writes to. MotionTargetTerm reads the target
+      // points' velocity state, so a probe bound to anything else is ignored.
+      maspack.properties.Property[] bound = velProbe.getAttachedProperties ();
+      StringBuilder hosts = new StringBuilder ();
+      for (int i = 0; i < bound.length && i < 2; i++) {
+         Object host = bound[i].getHost ();
+         hosts
+            .append (" ").append (host.getClass ().getSimpleName ()).append ("/")
+            .append (bound[i].getName ());
+      }
+      System.out
+         .println (
+            "GaitModel: velocity probe bound to " + bound.length
+            + " properties, first:" + hosts);
       return velProbe;
+   }
+
+   /**
+    * How the motion targets are smoothed, from the system property
+    * {@code gaitmodel.targetsmoothing}.
+    * <p>
+    * {@code step} sizes the velocity window from the step size, which is what
+    * every batch so far was computed with. It asks for 0.21 s of data but
+    * counts in time steps while the probe carries one knot per captured frame,
+    * so the window overruns the data and ArtiSynth shrinks it to the whole
+    * list - the targets become one polynomial over the gait cycle. {@code
+    * knots} counts the same 0.21 s in knots, which is the span that was
+    * intended. {@code positions} smooths the positions over that span instead
+    * and differentiates them afterwards, the order OpenSim's pipeline uses,
+    * which avoids amplifying noise into the velocity target.
+    *
+    * @return smoothing mode, {@code step} unless the property says otherwise
+    */
+   private static String targetSmoothingMode () {
+      String mode = System.getProperty ("gaitmodel.targetsmoothing", "step");
+      return mode.trim ().toLowerCase ();
+   }
+
+   /**
+    * Savitzky-Golay window for the motion targets, counted in probe knots so
+    * that it spans 0.21 s whatever the step size and however often the probe
+    * was sampled.
+    *
+    * @param probe
+    * probe whose knot spacing sets the window
+    * @return odd window of at least 5 knots, never longer than the data
+    */
+   private int targetSmoothingWindow (NumericProbeBase probe) {
+      int nknots = probe.getNumericList ().getNumKnots ();
+      double span = probe.getStopTime () - probe.getStartTime ();
+      double dt = (nknots > 1) ? span / (nknots - 1) : getMaxStepSize ();
+      int wsize = (int)Math.round (0.21 / dt);
+      // Savitzky-Golay needs an odd window, and one longer than the data is
+      // what the step-size mode gets wrong in the first place.
+      if (wsize % 2 == 0) {
+         wsize++;
+      }
+      return Math.max (5, Math.min (wsize, nknots));
    }
 
    /**
@@ -2174,6 +2278,8 @@ public class GaitModel extends RootModel {
          muscle.setExcitation (0.0);
          myMuscles.add (muscle);
       });
+      //setSimpleMuscles (myMuscles);
+      //setMillardMuscles(myMuscles);
       return myMuscles;
    }
 
@@ -2195,7 +2301,7 @@ public class GaitModel extends RootModel {
     * Defines all in- and outgoing probes for the model. Ingoing probes can be
     * experimental marker trajectories, forces or generalized coordinates,
     * outgoing probes can be all joint angles (if not already specified as
-    * generalized coordinates), muscle and frame exciter excitations.
+    * generalized coordinates), muscle and joint actuator excitations.
     * 
     * @param name
     * Name specifier of the current working directory
@@ -2492,6 +2598,23 @@ public class GaitModel extends RootModel {
       coll.setBilateralVertexContact (false);
       // Smooth vertex penetration contatcs
       coll.getSmoothVertexContacts ();
+      // Add contact interfaces
+      // RigidBody bodyA = (RigidBody)jt.getBodyA ();
+      // RigidBody bodyB = (RigidBody)jt.getBodyB ();
+      // Calculate compliant contact properties
+      // double comp = 1;
+      // double mass = bodyA.getMass () + bodyB.getMass ();
+      // double damp = 2 * 1 * Math.sqrt (1 / comp * mass);
+      // createCollision (bodyA, bodyB, comp, damp);
+      // Initialize the contact monitor to handle all individual collision
+      // responses
+      //String msgName = name + "/Output/" + name + "_message_file.txt";
+      //String msgPath =
+      //   ArtisynthPath.getSrcRelativePath (this, msgName).toString ();
+      //ContactMonitor contMonitor =
+      //   new ContactMonitor (coll.responses (), msgPath);
+      //contMonitor.setName ("Contact monitor");
+      //addMonitor (contMonitor);
    }
 
    /**
@@ -2571,7 +2694,14 @@ public class GaitModel extends RootModel {
       // if not coded separately, the hybrid solves prop is wrong in the
       // input.txt
       solver.setHybridSolve (false);
+      // JVM-global and static, so whichever model was loaded first in this JVM
+      // decides it unless we say so. True is the default and what every batch
+      // so far was computed with; changing it changes results.
+      MechSystemSolver.useFictitousJacobianForces = true;
       solver.setIntegrator (Integrator.FullBackwardEuler);
+      // Inert under FullBackwardEuler: integratorIsImplicit() in
+      // MechSystemSolver lists only BackwardEuler, ConstrainedBackwardEuler and
+      // Trapezoidal, so position correction falls through to GlobalMass.
       solver.setStabilization (PosStabilization.GlobalStiffness);
       setMaxStepSize (1e-3);
       // mech model properties
@@ -2827,6 +2957,13 @@ public class GaitModel extends RootModel {
             });
          }
          output.append ("\n");
+         // In case it is desired to export the Mesh to a separate file.
+         // String inRBMeshString = ArtisynthPath.getSrcRelativePath
+         // (this,"/Input Files/" + myName + "_" +rb.getName () +
+         // "_mesh.obj");
+         // rb.getSurfaceMesh().print (inRBMeshString);
+         // Get all vertices and faces of each rigid body and print its
+         // index and parameters
       });
    }
 
@@ -3004,21 +3141,19 @@ public class GaitModel extends RootModel {
             .append ("Enabled: ").append (lTerm.isEnabled ()).append ("\n")
             .append ("Weight: ").append (lTerm.getWeight ()).append ("\n");
       }
-      // Fallback solver to run the cost term solver when constrained solves
-      // aren't feasible
-      FeasibleQPSolver solver = controller.getFeasibleSolver ();
+      // The solver, and whether it retries a step it cannot satisfy with the
+      // equality constraints demoted to cost terms
+      QPSolver solver = controller.getSolver ();
       if (solver != null) {
          output
-            .append ("\nFEASIBLE SOLVER INFORMATION\n").append ("Enabled: ")
-            .append (solver.isEnabled ()).append ("\n")
+            .append ("\nQP SOLVER INFORMATION\n").append ("Fallback enabled: ")
+            .append (solver.getFallbackEnabled ()).append ("\n")
             .append ("Bounds threshold: ")
             .append (solver.getBoundsThreshold ()).append ("\n")
-            .append ("Fallback Q per unit weight: ")
-            .append (solver.getFallbackQMuscle ()).append ("\n")
-            .append ("Fallback L2 weight: ")
-            .append (solver.getFallbackL2Weight ()).append ("\n")
-            .append ("Equality tolerance: ")
-            .append (solver.getEqualityTolerance ()).append ("\n");
+            .append ("Fallback cost scale: ")
+            .append (solver.getFallbackCostScale ()).append ("\n")
+            .append ("Bounds tolerance: ")
+            .append (solver.getBoundsTolerance ()).append ("\n");
       }
       // Force excitation Term
       ForceExcitationTargetTerm fTerm =
@@ -3145,8 +3280,149 @@ public class GaitModel extends RootModel {
    }
 
    /**
+    * Adds the revision of the two code bases that produced a run to the output
+    * string: this model, and the ArtiSynth core it was built against.
+    * <p>
+    * Recorded because nothing else in this file identifies them, and core has
+    * moved underneath a batch before. Sixty-four core commits landed between
+    * the September 2026 batches and the first attempt to reproduce one of
+    * them, among them a fix to {@code GeometryTransformer} for scaled rigid
+    * transforms, and the attempt did not reproduce. Without these two lines
+    * that took four simulation runs to narrow down.
+    * <p>
+    * A commit does not settle it on its own: a working copy carrying
+    * uncommitted changes reads the same as a clean one at the same commit, and
+    * one such change was part of that same episode. It narrows the question
+    * rather than answering it.
+    *
+    * @param output
+    * {@link StringBuilder} string
+    */
+   private void writeProvenanceInfo (StringBuilder output) {
+      output
+         .append ("\nPROVENANCE INFORMATION\n").append ("Core version: ")
+         .append (readCoreVersion ()).append ("\n").append ("Core revision: ")
+         .append (gitRevision (new File (ArtisynthPath.getHomeDir ())))
+         .append ("\n").append ("Model revision: ")
+         .append (
+            gitRevision (
+               new File (ArtisynthPath.getSrcRelativePath (this, null))))
+         .append ("\n");
+   }
+
+   /**
+    * @return contents of core's VERSION file, or {@code unknown}
+    */
+   private static String readCoreVersion () {
+      String line =
+         firstLine (new File (ArtisynthPath.getHomeDir (), "VERSION"));
+      return (line == null || line.isEmpty ()) ? "unknown" : line;
+   }
+
+   /**
+    * The commit HEAD points at in the git working copy containing
+    * {@code start}, searched upwards, as {@code <branch> <short hash>}.
+    *
+    * @param start
+    * directory to start the search from
+    * @return revision description, or {@code unknown} when there is no
+    * working copy to read - a run from a jar or a packaged release has none,
+    * which is itself worth recording rather than hiding
+    */
+   private static String gitRevision (File start) {
+      File dir = start;
+      while (dir != null && !new File (dir, ".git").exists ()) {
+         dir = dir.getParentFile ();
+      }
+      if (dir == null) {
+         return "unknown";
+      }
+      File git = new File (dir, ".git");
+      if (git.isFile ()) {
+         // A worktree or submodule keeps its .git as a file pointing elsewhere.
+         String redirect = firstLine (git);
+         if (redirect == null || !redirect.startsWith ("gitdir:")) {
+            return "unknown";
+         }
+         git = new File (redirect.substring ("gitdir:".length ()).trim ());
+      }
+      String head = firstLine (new File (git, "HEAD"));
+      if (head == null) {
+         return "unknown";
+      }
+      if (!head.startsWith ("ref:")) {
+         // A detached HEAD holds the hash itself.
+         return shorten (head);
+      }
+      String ref = head.substring ("ref:".length ()).trim ();
+      String branch =
+         ref.startsWith ("refs/heads/")
+            ? ref.substring ("refs/heads/".length ()) : ref;
+      String hash = firstLine (new File (git, ref));
+      if (hash == null) {
+         // A ref that has been packed has no file of its own.
+         hash = packedRef (new File (git, "packed-refs"), ref);
+      }
+      return hash == null ? branch + " unknown" : branch + " " + shorten (hash);
+   }
+
+   /**
+    * Looks a ref up in a {@code packed-refs} file.
+    *
+    * @param file
+    * the packed-refs file
+    * @param ref
+    * fully qualified ref name
+    * @return the hash, or {@code null} if the file or the ref is absent
+    */
+   private static String packedRef (File file, String ref) {
+      try (BufferedReader reader =
+         new BufferedReader (new FileReader (file))) {
+         String line;
+         while ((line = reader.readLine ()) != null) {
+            if (line.startsWith ("#") || line.startsWith ("^")) {
+               continue;
+            }
+            int space = line.indexOf (' ');
+            if (space > 0 && line.substring (space + 1).trim ().equals (ref)) {
+               return line.substring (0, space);
+            }
+         }
+      }
+      catch (IOException ex) {
+         // Treated as absent: a missing revision is reported, not thrown.
+      }
+      return null;
+   }
+
+   /**
+    * @param file
+    * file to read
+    * @return the first line, trimmed, or {@code null} if it cannot be read
+    */
+   private static String firstLine (File file) {
+      try (BufferedReader reader =
+         new BufferedReader (new FileReader (file))) {
+         String line = reader.readLine ();
+         return line == null ? null : line.trim ();
+      }
+      catch (IOException ex) {
+         return null;
+      }
+   }
+
+   /**
+    * @param hash
+    * a full commit hash
+    * @return the first eight characters, as git abbreviates them
+    */
+   private static String shorten (String hash) {
+      return hash.length () > 8 ? hash.substring (0, 8) : hash;
+   }
+
+   /**
     * Adds solver information to the output string.
-    * 
+    *
     * @param output
     * {@link StringBuilder} string
     * @param solver
@@ -3168,6 +3444,9 @@ public class GaitModel extends RootModel {
          .append ("Matrix Solver: ")
          .append (solver.getMatrixSolver ().toString ()).append ("\n")
          .append ("Hybrid Solving enabled: ").append (solver.getHybridSolve ())
-         .append ("\n");
+         .append ("\n")
+         // JVM-global, so record what this run actually integrated with
+         .append ("Fictitious Jacobian forces: ")
+         .append (MechSystemSolver.useFictitousJacobianForces).append ("\n");
    }
 }

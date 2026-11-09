@@ -1,24 +1,52 @@
 package artisynth.models.gait_model.helper_classes;
 
+import artisynth.core.inverse.QPSolver;
+import artisynth.core.femmodels.FemModel;
 import artisynth.core.inverse.TrackingController;
 import artisynth.core.mechmodels.ExcitationComponent;
 import artisynth.core.mechmodels.MechModel;
+import artisynth.core.mechmodels.MechSystemModel;
+import artisynth.core.modelbase.ComponentList;
+import artisynth.core.modelbase.ModelComponent;
 
 /**
  * The motion target controller is a subclass of {@link TrackingController} with
  * additional functionalities for tracking <em>excitation</em> or <em>force</em>
  * targets on pure-excitation actuators (FrameExciter, PointExciter,
  * JointActuator) and muscles via the embedded
- * {@link ForceExcitationTargetTerm}. Also the motion target controller uses
- * {@link FeasibleQPSolver} per default.
+ * {@link ForceExcitationTargetTerm}.
+ * <p>
+ * It also computes the FEM stresses once per step for the excitation
+ * response, instead of once per exciter. Before each force evaluation of the
+ * response, the stock
+ * {@link TrackingController#setExcitations(maspack.matrix.VectorNd, int)}
+ * invalidates the stresses of every FEM model. Positions do not change during
+ * the response, and only FEM muscle models have excitation-dependent
+ * stresses, so this controller invalidates all FEM stresses once before the
+ * response and, during it, only those of FEM models that are excitation
+ * components.
+ * <p>
+ * The new functionality fills two gaps in the stock {@link TrackingController}:
+ * <ol>
+ * <li>Pure-excitation actuators ({@code F = e * scale}) have trivial
+ * force/position Jacobians, so the inherited {@code ForceEffectorTerm} cannot
+ * drive them toward a force target. The new term encodes their force target as
+ * a direct excitation target.</li>
+ * <li>Components driven by excitation alone, such as joint actuators, can now
+ * be tracked by prescribing the excitation they should attain.</li>
+ * </ol>
+ * Because the new term is added to the same QP as the inherited motion and
+ * force-effector terms, the solver finds excitations that simultaneously
+ * realise the motion targets <em>and</em> the prescribed excitation/force
+ * targets, with relative trade-off governed by the term weights.
  *
- * @author Alexander Graf Copyright (c) 2026
+ * @author Alexander Denk Copyright (c) 2025
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.graf-lmr@uni-due.de
+ * alexander.denk@uni-due.de
  */
 public class MotionTargetController extends TrackingController {
 
@@ -28,11 +56,8 @@ public class MotionTargetController extends TrackingController {
     */
    protected ForceExcitationTargetTerm myForceExcitationTerm;
 
-   /**
-    * The installed solver, held separately from the inherited
-    * {@code myQPSolver} field so its counters can be reached without a cast.
-    */
-   protected FeasibleQPSolver myFeasibleSolver;
+   // True while the excitation response is computed
+   private boolean myComputingResponse = false;
 
    public MotionTargetController () {
 
@@ -43,17 +68,17 @@ public class MotionTargetController extends TrackingController {
       setMech (mech);
       setName (name);
       this.initComponents ();
-      // Installed after initComponents, which is what allocates the stock
-      // solver. See FeasibleQPSolver for why the stock one is not enough once
-      // the motion targets are equality constraints.
-      myFeasibleSolver = new FeasibleQPSolver (this);
-      myQPSolver = myFeasibleSolver;
+      // Configured after initComponents, which is what allocates the solver.
+      // The retry is off by default in core; once the motion targets are
+      // equality constraints a step the solver cannot satisfy would stall the
+      // whole run rather than being approached as a cost. See QPSolver.
+      myQPSolver.setFallbackEnabled (true);
    }
 
    public void initialize (double t0) {
       super.initialize (t0);
-      if (myFeasibleSolver != null) {
-         myFeasibleSolver.reset ();
+      if (myQPSolver != null) {
+         myQPSolver.reset ();
       }
       System.out
          .println ("MotionTargetController: run " + this.getMech ().getName ());
@@ -62,6 +87,57 @@ public class MotionTargetController extends TrackingController {
    public void apply (double t0, double t1) {
       super.apply (t0, t1);
       System.out.println ("t = " + t1);
+   }
+
+   /**
+    * Computes the excitation response with all FEM stresses invalidated once
+    * beforehand, so that its force evaluations use the stresses of the
+    * current positions.
+    *
+    * @param t0 current time
+    * @param t1 time at the end of the step
+    */
+   @Override
+   protected void updateCostTerms (double t0, double t1) {
+      super.invalidateFEMStresses (getMech ());
+      myComputingResponse = true;
+      try {
+         super.updateCostTerms (t0, t1);
+      }
+      finally {
+         myComputingResponse = false;
+      }
+   }
+
+   /**
+    * Invalidates the stresses of all FEM models or, while the excitation
+    * response is computed, only those whose stresses depend on excitations,
+    * i.e. FEM muscle models.
+    *
+    * @param model mech system whose FEM models are checked
+    */
+   @Override
+   protected void invalidateFEMStresses (MechSystemModel model) {
+      if (myComputingResponse) {
+         invalidateExcitableFemStresses (model);
+      }
+      else {
+         super.invalidateFEMStresses (model);
+      }
+   }
+
+   // Same traversal as the stock method, which invalidates every FEM model
+   private void invalidateExcitableFemStresses (ModelComponent comp) {
+      if (comp instanceof FemModel) {
+         if (comp instanceof ExcitationComponent) {
+            ((FemModel)comp).invalidateStressAndStiffness ();
+         }
+      }
+      else if (comp instanceof ComponentList<?>) {
+         for (ModelComponent mc : (ComponentList<?>)comp) {
+            invalidateExcitableFemStresses (mc);
+         }
+      }
    }
 
    /**
@@ -157,10 +233,22 @@ public class MotionTargetController extends TrackingController {
 
    /**
     * The solver that checks each solution against the program it came from.
-    * See {@link FeasibleQPSolver}.
+    * See {@link QPSolver}.
     */
-   public FeasibleQPSolver getFeasibleSolver () {
-      return myFeasibleSolver;
+   public QPSolver getSolver () {
+      return myQPSolver;
+   }
+
+   /**
+    * @deprecated Use {@link #getSolver} instead. Kept because a caller that
+    * probes for this method before reading the solver health would otherwise
+    * find nothing and record none of it.
+    *
+    * @return the installed solver
+    */
+   @Deprecated
+   public QPSolver getFeasibleSolver () {
+      return myQPSolver;
    }
 
    /**
@@ -172,14 +260,14 @@ public class MotionTargetController extends TrackingController {
     * @return fallback share in percent
     */
    public double getFallbackPercent () {
-      return myFeasibleSolver == null ? 0 : myFeasibleSolver.getFallbackPercent ();
+      return myQPSolver == null ? 0 : myQPSolver.getFallbackPercent ();
    }
 
    /**
     * @return number of solves re-run without their equality constraints
     */
    public int getFallbackCount () {
-      return myFeasibleSolver == null ? 0 : myFeasibleSolver.getFallbackCount ();
+      return myQPSolver == null ? 0 : myQPSolver.getFallbackCount ();
    }
 
    /**

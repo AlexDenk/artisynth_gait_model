@@ -22,15 +22,78 @@ import maspack.matrix.VectorNd;
 /**
  * A QP term that lets {@link MotionTargetController} (and any
  * {@link TrackingController}) track <em>excitation</em> or <em>force</em>
- * targets on active components.
+ * targets on active components. It fills two gaps left by the stock inverse
+ * machinery.
  *
- * @author Alexander Graf Copyright (c) 2026
+ * <h2>Gap 1: pure-excitation actuators</h2>
+ *
+ * {@link FrameExciter}, {@link PointExciter} and {@link JointActuator} apply
+ * {@code F = e * scale} with no dependence on model state. Their
+ * {@code addForcePosJacobian}/{@code addForceVelJacobian} are therefore
+ * trivial, and the stock {@code ForceEffectorTerm} cannot drive them toward a
+ * force target. For these the mapping force &harr; excitation is
+ * <em>exact</em>, so a force target is simply {@code e_target = F / scale} and
+ * the QP row is an exact indicator row &mdash; not a linearisation.
+ *
+ * <h2>Gap 2: the active force of a muscle</h2>
+ *
+ * For a {@link Muscle}, {@code AxialSpring.getForce} reports
+ * {@code computeF(l, ldot, 0)} and {@code addForcePosJacobian} uses
+ * {@code computeDFdl(l, ldot, 0)} &mdash; both with excitation hard-wired to
+ * zero. The stock {@code ForceEffectorTerm} therefore controls only the
+ * <em>passive</em> tension; the muscle's own activation is invisible to it.
+ * <p>
+ * Conversely, activation is not the whole story either: the tension at the end
+ * of the step depends on where the muscle <em>ends up</em>, and that depends
+ * on every excitation in the model through the system dynamics. Writing
+ * {@code l = l(a)}, {@code ldot = ldot(a)} and {@code e = a_k}, the complete
+ * derivative is
+ *
+ * <pre>
+ *   dF/da_j = dF/de * delta_jk            (direct activation)
+ *           + dF/dl     * dl/da_j         (state coupling, position)
+ *           + dF/dldot  * dldot/da_j      (state coupling, velocity)
+ * </pre>
+ *
+ * where the excitation response supplies {@code u = u0 + Hu a}, hence
+ * {@code dldot/da_j = J_seg Hu[:,j]} and {@code dl/da_j = h J_seg Hu[:,j]}.
+ * <p>
+ * Keeping only the first line (as a naive activation-only linearisation does)
+ * produces a systematic tracking error that grows with {@code ldot}: the term
+ * believes it hits the target exactly every step while the realised force
+ * drifts away. Keeping only the last two lines is what core does today.
+ * <b>This term computes all three.</b> The state-coupled part is assembled
+ * exactly the way {@code ForceEffectorTerm} does it (same Jacobian
+ * construction, same sign convention), and the direct {@code dF/de}
+ * contribution is then subtracted from the muscle's own column.
+ *
+ * <h2>Conventions</h2>
+ *
+ * Rows are scaled <em>linearly</em> by {@code sqrt}-free weights, matching
+ * {@code ForceEffectorTerm}: both {@code H} and {@code b} are multiplied by
+ * the per-target weight and then by the term weight, so the contribution to
+ * the quadratic cost scales with the square of the weight. This keeps weights
+ * commensurate with the other terms in the controller.
+ * <p>
+ * The term honours {@code TrackingController.getNormalizeCostTerms()} (which
+ * defaults to {@code true}) and {@code getComputeIncrementally()}. In
+ * incremental mode the QP solves for excitation <em>deltas</em>, so excitation
+ * targets are expressed relative to the current excitation.
+ * <p>
+ * Because it extends {@link LeastSquaresTermBase} the term can act either as a
+ * soft cost (default) or as a hard equality/inequality constraint via
+ * {@link #setType}.
+ * <p>
+ * This class lives outside {@code artisynth.core.inverse} so that pulling a
+ * new core release will not overwrite it.
+ *
+ * @author Alexander Denk Copyright (c) 2026
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.graf-lmr@uni-due.de
+ * alexander.denk@uni-due.de
  */
 public class ForceExcitationTargetTerm extends LeastSquaresTermBase {
 
@@ -138,7 +201,7 @@ public class ForceExcitationTargetTerm extends LeastSquaresTermBase {
       }
    }
 
-   // --------------------------------------------------------------------
+   // -------------------------------------------------------------------- api
 
    /**
     * Adds a target pinning the excitation of {@code ex} to
@@ -277,7 +340,7 @@ public class ForceExcitationTargetTerm extends LeastSquaresTermBase {
       return myB;
    }
 
-   // -------------------------------------------------------------------
+   // ------------------------------------------------------------------- core
 
    protected int resolveIndex (ExcitationComponent ex, TrackingController c) {
       for (int i = 0; i < c.numExciters (); i++) {

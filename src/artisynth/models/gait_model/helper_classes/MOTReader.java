@@ -2,26 +2,21 @@ package artisynth.models.gait_model.helper_classes;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 import maspack.matrix.*;
 
 /**
- * File importer for .mot files.
+ * The gait model class...
  * <p>
- * 
- * @author Alexander Graf Copyright (c) 2026
+ * @author Alexander Denk Copyright (c) 2025
  * <p>
  * University of Duisburg-Essen
  * <p>
  * Chair of Mechanics and Robotics
  * <p>
- * alexander.graf-lmr@uni-due.de
+ * alexander.denk@uni-due.de
  */
 public class MOTReader {
    // ----------------------------Instance Fields------------------------------
@@ -205,6 +200,11 @@ public class MOTReader {
       List<Object> flags = scanDataHeader (reader);
       scanMOTData (reader, flags);
       reader.close ();
+      // Print reading details to the console
+      System.out
+         .println ("MOTReader: experimental force data: " + this.getNumForceLabels ());
+      System.out
+         .println ("MOTReader: read " + this.getNumForceFrames () + " frames");
    }
 
    private void closeQuietly (InputStream in) {
